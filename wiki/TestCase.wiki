@@ -1,0 +1,13 @@
+#summary this page quickly explain what a TestCase is in the SUnit framework.
+#labels Phase-Implementation
+
+= Introduction =
+
+In Smalltalk SUnit framework, a TestCase is place for holding a suite of unit test cases.
+
+
+= Details =
+
+TestCase is a class providing testing messages, mainly *#assert: #deny: #should: #shouldnt: #should:raise: #shouldnt:raise:*. It provides support for trapping exceptions and collecting results of the test suites. The SUnit framework then provides a user interface for driving the tests, displaying and debugging the failures. 
+
+A specific test suite is usually implemented by subclassing TestCase, and ArbitraryPrecisionFloatTests is thus a subclass of TestCase.
