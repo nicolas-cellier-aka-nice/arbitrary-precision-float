@@ -1,0 +1,12 @@
+#summary this page explains ArbitraryPrecisionFloatTests, the unit TestCase for ArbitraryPrecisionFloat .
+#labels Phase-Design
+
+= Introduction =
+
+ArbitraryPrecisionFloatTests is a SUnit TestCase for ArbitraryPrecisionFloat.
+
+
+= Details =
+
+Implementation details of the tests are not yet documented.
+SUnit tests are expected to be readable and auto-documented, however, some details might deserve further explanations. 
