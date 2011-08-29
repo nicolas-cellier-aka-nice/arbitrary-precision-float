@@ -1,0 +1,13 @@
+#summary This page explains availability of ArbitraryPrecisionFloat for Dolphin Smalltalk dialect.
+#labels Phase-Deploy
+
+= Introduction =
+
+ArbitraryPrecisionFloat is available in Dolphin Smalltalk under the form of a single package.
+
+
+= Details =
+
+What do you need to play with ArbitraryPrecisionFloat in Dolphin ?
+  * Dolphin version 5.1 or X6 http://www.object-arts.com/
+  * the Dolphin package ArbitraryPrecisionFloat.pac downloadable from the [https://code.google.com/p/arbitrary-precision-float/source/checkout source tab] on this site
