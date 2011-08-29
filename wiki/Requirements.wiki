@@ -1,0 +1,19 @@
+#summary This page presents a few expectations for ArbitraryPrecisionFloat.
+#labels Phase-Requirements
+
+= Introduction =
+
+An ArbitraryPrecisionFloat is expected to play well in the Smalltalk Number zoo. As such, it is expected to fulfil a number of requirements. Using the SUnit framework or one of its avatar which are universally available in Smalltalk dialects, ArbitraryPrecisionFloatTests shall provide TestCase for the various requirements listed here.
+
+
+= Details =
+
+  * An ArbitraryPrecisionFloat shall respond to traditional arithmetic operations *#+ #- {{{#*}}}* and *#/*. The argument of these message shall be any other Number, and the ArbitraryPrecisionFloat shall provide mechanisms to convert the receiver or the operand into the most accurate inexact representation. The result of arithmetic operations shall respect the rounding mode and be accurate to at least half a unit of least precision.
+  * At least the default IEEE 754 rounding mode (round to nearest even) shall be implemented. The other rounding modes are optional (since thay cannot be easily controlled for other Floating point Numbers in most Smalltalk dialects).
+  * It shall be possible to convert any Number *#asArbitraryPrecisionFloatNumBits:* with a requested precision parameter expressed as a number of binary digits.
+  * inversely, an ArbitraryPrecisionFloat shall be convertible *#asInteger (#truncated)*, *#rounded* to nearest integer, *#asFraction* (using the exact value stored in internal representation) *#asFloatE #asFloatD #asFloatQ* (or to the nearest implemented precision available in the dialect). 
+  * It shall be possible to compare an ArbitraryPrecisionFloat with any other Number by using one of the *#< #> #>= #<= #= #~=* messages. Preferably, the comparison shall be exact.
+  * It shall be possible to obtain a *#negated* ArbitraryPrecisionFloat, and a *#reciprocal* if different from zero.
+  * It shall be possible to raise an ArbitraryPrecisionFloat to the power of an Integer with *#raisedToInteger:* or any other Number with *#raisedTo:* if the ArbitraryPrecisionFloat is non negative. For raising to the power of two, *#squared* conveniency shall be available.
+  * It shall be possible to evaluate the standard mathematical functions on an ArbitraryPrecisionFloat, and the result shall differ from theoretical value by at most half a unit of least precision. To name a few, the square root *#sqrt* the exponential and logarithms *#exp #ln #log:* the trigonometric *#sin #cos #tan* and their inverse *#arcSin #arcCos #arcTan #arcTan:* and optionally the hyperbolic *#sinh #cosh #tanh* and their inverse *#arSinh #arCosh #arTanh*.
+  * It shall be possible to print a representation of an ArbitraryPrecisionFloat in a decimal form with traditional Smalltalk messages *#printString #printOn:* and *#storeString #storeOn:*. The decimal representation shall use the minimum number of decimal digits such that the value of the ArbitraryPrecisionFloat can be reconstructed exactly (this implies that the decimal value shall approximate the ArbitraryPrecisionFloat value with at most half a unit of least precision error). Note that this representation is usually inexact but more efficient than the exact internal representation (which it is known to use a finite number of digits since 2 divides 10). 
