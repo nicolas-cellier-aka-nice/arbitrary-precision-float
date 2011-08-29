@@ -1,0 +1,19 @@
+#summary This page informs about installing/using ArbitraryPrecisionFloat on Squeak and Pharo.
+#labels Phase-Deploy
+
+= Introduction =
+
+ArbitraryPrecisionFloat is available in Squeak and Pharo as a pair of Monticello packages.
+
+
+= Details =
+
+What do you need to play with ArbitraryPrecisionFloat in Squeak or Pharo?
+  * install a [http://squeak.org/ Squeak] or [http://pharo-project.org/ Pharo] virtual machine and image (refer to instructions on the respective sites)
+  * open the Squeak/Pharo image
+  * from there, open a Monticello browser
+  * from there, add a Monticello HTTP repository pointing on http://www.squeaksource.com/ArbitraryPrecisionFl, and open the repository
+  * from there download a version of the packages ArbitraryPrecisionFloat and ArbitraryPrecisionFloatTests from this repository (you might want to check http://www.squeaksource.com/ArbitraryPrecisionFl.html for revision history).
+  * Then, refer to [UsingArbitraryPrecisionFloat] to get a short introduction about usage.
+
+Note that the package is expected to work on Squeak trunk but also back to Squeak 3.9 and possibly earlier, and thus also on all flavours of Pharo to date.
