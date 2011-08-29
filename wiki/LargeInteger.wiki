@@ -1,0 +1,13 @@
+#summary This page explains what are the principal LargeInteger methods required by ArbitraryPrecisionFloat
+#labels Phase-Design
+
+= Introduction =
+
+Most Smalltalk dialects provide a LargeInteger library able to perform exact arithmetic on integers of arbitrary length. ArbitraryPrecisionFloat implementation relies on the presence of suche library.
+
+
+= Details =
+
+The principal messages of LargeInteger used by ArbitraryPrecisionFloat are the following:
+
+TO BE DEFINED
