@@ -1,0 +1,37 @@
+#summary this page presents the design of ArbitraryPrecisionFloat .
+#labels Phase-Design
+
+= Introduction =
+
+ArbitraryPrecisionFloat is a subclass of Number specialized in performing inexact floating point computations with an arbitrary precision.
+The main design decision for ArbitraryPrecisionFloat implementation is explained in this page. 
+
+
+= Details =
+
+An ArbitraryPrecisionFloat is represented internally in base 2.
+The precision of an Arbitrary is thus specified as a number of binary digits (bits). It is stored in the instance variable *nBits*.
+
+Like other floating point numbers, an ArbitraryPrecisionFloat can be decomposed into:
+  * a sign (+1 for positive number or -1 for a negative)
+  * a normalizedMantissa (which is either zero, or has the form 1.mmm...mmmm where there are *nBits-1* binary digits m of value 0 or 1)
+  * an exponent which is an integer made of digits eee....eee
+
+The exact value of an ArbitraryPrecisionFloat is thus:
+  {{{value = (sign * normalizedMantissa * (base raisedTo: exponent)).}}}
+with base = 2.
+
+The internal representation of these components is arranged with following rules:
+  * each time the unsigned mantissa is multiplied by 2, mantissa digits are shifted left of the decimal point 1m.mm...mmm and the exponent must be decreased by 1 so that the product would represent the same number. The process is repeated so as to obtain an integer mantissa
+  {{{value = (sign * unsignedIntegerMantissa * (base raisedTo: biasedExponent)).}}}
+  * Since the mantissa is an Integer and since Smalltalk integers are signed, the sign and mantissa are coded into a single *mantissa* instance variable and the biasedExponent is stored into a *biasedExponent* instance variable. The value of an ArbitraryPrecisionFloat is thus always:
+  {{{value = (mantissa * (base raisedTo: biasedExponent)).}}}
+  * In normalized form, the highest bit of the mantissa would be of rank *nBits* thus for a non zero ArbitraryPrecisionFloat we have the relations
+  {{{mantissa = (sign * normalizedMantissa * (2 raisedTo: nBits)).}}}<br>
+  {{{biasedExponent = (exponent - (nBits-1)).}}}
+  * Since there might be one or several trailing zeros, an ArbitraryPrecisionFloat can be represented with an economic form where
+  {{{mantissa highBit <= nBits.}}}<br>
+  {{{biasedExponent = (exponent - mantissa highBit + 1).}}}<br>
+  * In intermediate form - during internal computations, and before a rounding operation take place - the mantissa can temporarily contain some excess precision bits {{{mantissa highBit > nBits}}}. Note that the rounding operation could round to an upper absolute value and eventually shift the exponent by 1. Thus the rounding operation must take place before we actually now the normalized value of exponent.
+  * the *mantissa* is coded in an Integer and contains the sign, an Integer is exact and cannot distinguish a positive and a negative zero, thus - unlike IEEE754 - an ArbitraryPrecisionFloat cannot distinguish a positive zero and a negative zero.
+  * the biasedExponent is represented with another Integer, and as such can carry an arbitrary number of binary digits, thus - unlike IEEE754 - there is no representation of infinite, "Not A Number" (NaN) nor subnormal(Gradual Underflow) ArbitraryPrecisionFloat .
