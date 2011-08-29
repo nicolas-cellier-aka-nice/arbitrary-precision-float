@@ -1,0 +1,15 @@
+#summary This page informs about installing/using ArbitraryPrecisionFloat on Cincom VisualWorks.
+
+= Introduction =
+
+ArbitraryPrecisionFloat is available as a bundle on Cincom VisualWorks public store (http://www.cincomsmalltalk.com/publicRepository/).
+
+
+= Details =
+
+What do you need to play with ArbitraryPrecisionFloat in VW? 
+  * A commercial or non commercial version of [http://www.cincomsmalltalk.com VisualWorks] - see the instructions on the site to obtain a copy.
+  * Open a VisualWorks image.
+  * From there, browse the published packages on the Cincom public store.
+  * From there select the ArbitraryPrecisionFloat bundle and load a recent version.
+  * Refer to [UsingArbitraryPrecisionFloat] for quick introduction on usage.
