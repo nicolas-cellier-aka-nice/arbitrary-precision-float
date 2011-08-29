@@ -1,8 +1,9 @@
 #summary This page informs about installing/using ArbitraryPrecisionFloat on Cincom VisualWorks.
+#labels Phase-Deploy
 
 = Introduction =
 
-ArbitraryPrecisionFloat is available as a bundle on Cincom VisualWorks public store (http://www.cincomsmalltalk.com/publicRepository/).
+ArbitraryPrecisionFloat is available as a bundle on [http://www.cincomsmalltalk.com VisualWorks] (aka VW) public store (http://www.cincomsmalltalk.com/publicRepository/).
 
 
 = Details =
