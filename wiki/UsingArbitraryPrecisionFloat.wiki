@@ -33,9 +33,10 @@ You can mix precisions, in which case the operands are converted to higher preci
   The rounding error of course depends on the precision.
 
 You can play with the digits of pi, by just writing this snippet:
-  {{{(0 asArbitraryPrecisionFloatNumBits: 500) pi.}}}<br>
-  -> * (ArbitraryPrecisionFloat readFrom: '3.14159265358979323846264338327950288419716939937510582097494459230781640628620899862803482534211706798214808651328230664709384460955058223172535940813' readStream numBits: 500)*<br>
-  Of course, the last digit is rounded, and might change if you ask for a few more digits.
+  {{{(0 asArbitraryPrecisionFloatNumBits: 320) pi.}}}<br>
+  -> * (ArbitraryPrecisionFloat readFrom: '3.141592653589793238462643383279502884197169399375105820974944592307816406286208998628034825342117' readStream numBits: 320)*<br>
+  Note that 10 binary digits are roughly equivalent to 3 decimal digits (2^10=1024), thus we effectively get around 96 decimal digits with 320 bits.<br>
+  Of course, the last digit is not exact, it suffers both from the rounding error for pi, and another rounding error for the base2 -> base 10 conversion, thus the last digit(s) might change if you ask for a few more digits.
 
 A requirement for ArbitraryPrecisionFloat mathematical functions is to differ from exact result by no more than half a unit of least precision. This is much stricter than IEEE 754 which has relaxed these requirements (probably to fit existing hardware/software floating point implementations). Also remind that ArbitraryPrecisionFloat can afford to be slow. Your machine optimized Floating points have different trade off - they must be fast. Thus the results of ArbitraryPrecisionFloat may differ from your floating point math library, but don't trust your math library too much.
 For example, in Squeak on MacOSX:
