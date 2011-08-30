@@ -15,7 +15,7 @@ Like another Float, an ArbitraryPrecisionFloat is inexact, but you can control t
   {{{((1/3) asFloatD asFraction - (1/3)) asFloatD.}}} -> *-1.850371707708594e-17*<br>
   {{{((1/3 asArbitraryPrecisionFloatNumBits: 200) asFraction - (1/3)) asFloatD.}}} -> *1.037169212976857e-61*
 
-Once you created an ArbitraryPrecisionFloat, you just act on it with any other Smalltalk Number.
+Once you created an ArbitraryPrecisionFloat, you just act on it as with any other Smalltalk Number.
   {{{| a b |}}}<br>
   {{{a := 1/3 asArbitraryPrecisionFloatNumBits: 100.}}}<br>
   {{{b := 2 asArbitraryPrecisionFloatNumBits: 100.}}}<br>
