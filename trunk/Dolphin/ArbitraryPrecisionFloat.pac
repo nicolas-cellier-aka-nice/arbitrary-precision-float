@@ -293,32 +293,32 @@ Instance Variables:
 	aNumber class = self class
 		ifFalse: [^ aNumber subtractFromArbitraryPrecisionFloat: self].
 	n := nBits max: aNumber numBits.
-	^ (self asArbitraryPrecisionFloatNumBits: n)
-		subtract: (aNumber asArbitraryPrecisionFloatNumBits: n)!
+	^ (self asArbitraryPrecisionFloatNumBits: n) copy
+		inPlaceSubtract: (aNumber asArbitraryPrecisionFloatNumBits: n)!
 
 * aNumber 
 	| n |
 	aNumber class = self class
 		ifFalse: [^ aNumber multiplyByArbitraryPrecisionFloat: self].
 	n := nBits max: aNumber numBits.
-	^ (self asArbitraryPrecisionFloatNumBits: n)
-		multiplyBy: (aNumber asArbitraryPrecisionFloatNumBits: n)!
+	^ (self asArbitraryPrecisionFloatNumBits: n) copy
+		inPlaceMultiplyBy: (aNumber asArbitraryPrecisionFloatNumBits: n)!
 
 / aNumber 
 	| n |
 	aNumber class = self class
 		ifFalse: [^ aNumber divideIntoArbitraryPrecisionFloat: self].
 	n := nBits max: aNumber numBits.
-	^ (self asArbitraryPrecisionFloatNumBits: n)
-		divideBy: (aNumber asArbitraryPrecisionFloatNumBits: n)!
+	^ (self asArbitraryPrecisionFloatNumBits: n) copy
+		inPlaceDivideBy: (aNumber asArbitraryPrecisionFloatNumBits: n)!
 
 + aNumber 
 	| n |
 	aNumber class = self class
 		ifFalse: [^ aNumber addToArbitraryPrecisionFloat: self].
 	n := nBits max: aNumber numBits.
-	^ (self asArbitraryPrecisionFloatNumBits: n)
-		add: (aNumber asArbitraryPrecisionFloatNumBits: n)!
+	^ (self asArbitraryPrecisionFloatNumBits: n) copy
+		inPlaceAdd: (aNumber asArbitraryPrecisionFloatNumBits: n)!
 
 < aNumber
 	aNumber class = self class ifTrue:
@@ -421,11 +421,6 @@ absPrintExactlyOn: aStream base: base
 	fixedFormat ifFalse:
 		[aStream nextPut: $e.
 		aStream nextPutAll: (baseExpEstimate - 1) printString]!
-
-add: b
-	"This must be sent with an ArbitraryPrecisionFloat argument"
-	
-	^self copy inPlaceAdd: b!
 
 agm: aNumber 
 	"Answer the arithmetic geometric mean of self and aNumber"
@@ -561,6 +556,39 @@ arTanh
 	self negative ifTrue: [arTanh inPlaceNegated].
 	^arTanh asArbitraryPrecisionFloatNumBits: nBits!
 
+asApproximateFraction
+	"Answer a Rational number--Integer or Fraction--representing the receiver.
+	This conversion uses the continued fraction method to approximate 
+	a floating point number."
+
+	| num1 denom1 num2 denom2 int frac newD temp limit |
+	num1 := self asFraction.	"use exact arithmetic"
+	frac := num1 fractionPart.		"The fractional part of self"
+	int := num1 truncated.		"The integer part of self"
+	num1 := int.	"The first of two alternating numerators"
+	denom1 := 1.		"The first of two alternating denominators"
+	num2 := 1.		"The second numerator"
+	denom2 := 0.		"The second denominator--will update"
+      limit := nBits + 15 // 8.
+	[frac = 0 or: [denom1 digitLength > limit or: [(self coerce: (Fraction numerator: num1 denominator: denom1)) = self]]]
+		whileFalse: 
+			["repeat while the fractional part is not zero"
+			newD := frac reciprocal.			"Take reciprocal of the fractional part"
+			int := newD truncated.		"get the integer part of this"
+			frac := newD fractionPart.	"and save the fractional part for next time"
+			temp := num2.				"Get old numerator and save it"
+			num2 := num1.				"Set second numerator to first"
+			num1 := num1 * int + temp.	"Update first numerator"
+			temp := denom2.				"Get old denominator and save it"
+			denom2 := denom1.			"Set second denominator to first"
+			denom1 := int * denom1 + temp.		"Update first denominator"].
+	"If fractional part is zero, return the first ratio"
+	denom1 = 1
+		ifTrue: ["Am i really an Integer?"
+				^num1"Yes, return Integer result"]
+		ifFalse: ["Otherwise return Fraction result"
+				^Fraction numerator: num1 denominator: denom1]!
+
 asArbitraryPrecisionFloatNumBits: n 
 	^ nBits = n
 		ifTrue: [self]
@@ -578,19 +606,22 @@ asFloat
 	nBits > n ifTrue: [^(self copy setPrecisionTo: n) asFloat].
 	^mantissa asFloat timesTwoPower: biasedExponent!
 
-asTrueFraction
+asFraction
 
 	"First remove lowBits from mantissa.
 	This can save a useless division and prevent gcd: cost"
 	self reduce.
-	
+
 	^ biasedExponent >= 0
 		ifTrue: [self shift: mantissa by: biasedExponent]
 		ifFalse: [
-			"Now avoid a painfull GCD: algorihm.
+			"Now avoid a costly GCD: algorihm.
 			mantissa is odd and cannot be reduced by a power of two.
 				mantissa / (1 bitShift: exponent negated)"
 			^ Fraction numerator: mantissa denominator: (1 bitShift: biasedExponent negated)]!
+
+asTrueFraction
+	^self asFraction!
 
 biasedExponent
 	^biasedExponent!
@@ -639,11 +670,6 @@ digitCompare: b
 	^ compare = 0
 		ifTrue: [(self - b) sign]
 		ifFalse: [compare]!
-
-divideBy: b
-	"This must be sent with an ArbitraryPrecisionFloat argument"
-	
-	^self copy inPlaceDivideBy: b!
 
 exp
 	"Answer the exponential of the receiver."
@@ -712,7 +738,7 @@ greaterThanInteger: anInteger
 hash
 	"Hash is reimplemented because = is implemented."
 	
-	^ self asTrueFraction hash!
+	^ self asFraction hash!
 
 inPlaceAbs
 	mantissa := mantissa abs!
@@ -942,11 +968,6 @@ mantissa: m exponent: e nBits: n
 	biasedExponent := e.
 	nBits := n.
 	self round!
-
-multiplyBy: b
-	"This must be sent with an ArbitraryPrecisionFloat argument"
-	
-	^self copy inPlaceMultiplyBy: b!
 
 negated
 	^self copy inPlaceNegated!
@@ -1234,11 +1255,6 @@ storeOn: aStream
 	aStream space; nextPutAll: 'nBits:'; space; print: nBits.
 	aStream nextPut: $)!
 
-subtract: b
-	"This must be sent with an ArbitraryPrecisionFloat argument"
-	
-	^self copy inPlaceSubtract: b!
-
 tan
 	^(ArbitraryPrecisionFloatForTrigonometry
 		mantissa: mantissa
@@ -1293,7 +1309,6 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #<!comparing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #=!comparing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #absPrintExactlyOn:base:!printing!public! !
-!ArbitraryPrecisionFloat categoriesFor: #add:!arithmetic-internal!private! !
 !ArbitraryPrecisionFloat categoriesFor: #agm:!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #arcCos!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #arCosh!mathematical!public! !
@@ -1302,8 +1317,10 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #arcTan:!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #arSinh!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #arTanh!mathematical!public! !
+!ArbitraryPrecisionFloat categoriesFor: #asApproximateFraction!converting!public! !
 !ArbitraryPrecisionFloat categoriesFor: #asArbitraryPrecisionFloatNumBits:!converting!public! !
 !ArbitraryPrecisionFloat categoriesFor: #asFloat!converting!public! !
+!ArbitraryPrecisionFloat categoriesFor: #asFraction!converting!public! !
 !ArbitraryPrecisionFloat categoriesFor: #asTrueFraction!converting!public! !
 !ArbitraryPrecisionFloat categoriesFor: #biasedExponent!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #coerce:!coercing!private! !
@@ -1311,7 +1328,6 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #cos!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #cosh!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #digitCompare:!private! !
-!ArbitraryPrecisionFloat categoriesFor: #divideBy:!arithmetic-internal!private! !
 !ArbitraryPrecisionFloat categoriesFor: #exp!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #exponent!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #generality!coercing!private! !
@@ -1336,7 +1352,6 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #ln!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #mantissa!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #mantissa:exponent:nBits:!initialize/release!public! !
-!ArbitraryPrecisionFloat categoriesFor: #multiplyBy:!arithmetic-internal!private! !
 !ArbitraryPrecisionFloat categoriesFor: #negated!arithmetic!public! !
 !ArbitraryPrecisionFloat categoriesFor: #negative!public!testing! !
 !ArbitraryPrecisionFloat categoriesFor: #nextToward:!accessing!public! !
@@ -1363,7 +1378,6 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #sinh!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #sqrt!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #storeOn:!printing!public! !
-!ArbitraryPrecisionFloat categoriesFor: #subtract:!arithmetic-internal!private! !
 !ArbitraryPrecisionFloat categoriesFor: #tan!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #tanh!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #timesTwoPower:!arithmetic!public! !
