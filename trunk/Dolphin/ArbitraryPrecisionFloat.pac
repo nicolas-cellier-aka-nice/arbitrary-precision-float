@@ -149,7 +149,7 @@ asArbitraryPrecisionFloatNumBits: n
 				- Float precision + 1.
 	mantissa := (self timesTwoPower: exponent negated) truncated. 
 	^ ArbitraryPrecisionFloat
-		mantissa: mantissa * self sign
+		mantissa: mantissa
 		exponent: exponent
 		nBits: n
 
@@ -516,6 +516,51 @@ arcTan: denominator
 						ifTrue: [ arcTan + arcTan pi ]
 						ifFalse: [ arcTan - arcTan pi ]]) asArbitraryPrecisionFloatNumBits: precision]]!
 
+argCosh
+	"Evaluate the arg hyperbolic cosine of the receiver."
+
+	| argCosh x one y two |
+	x := self asArbitraryPrecisionFloatNumBits: 6 + nBits.
+	one := x one.
+	x < one ifTrue: [self error: 'cannot compute argCosh of a number less than 1'].
+	x = one ifTrue: [^self zero].
+	y := x - one.
+	y < one
+		ifTrue:
+			[y := y asArbitraryPrecisionFloatNumBits: 6 + nBits + (y exponent negated).
+			two := one timesTwoPower: 1.
+			argCosh := ((y * (y + two)) sqrt + y + one) ln]
+		ifFalse: [argCosh := ((x squared - one) sqrt + x) ln].
+	^argCosh asArbitraryPrecisionFloatNumBits: nBits!
+
+argSinh
+	"Evaluate the arg hyperbolic cosine of the receiver."
+
+	| argSinh x one |
+	self isZero ifTrue: [^self].
+	self exponent negated > nBits ifTrue: [^self].
+	x := self asArbitraryPrecisionFloatNumBits: 6 + nBits + (0 max: self exponent negated).
+	x inPlaceAbs.
+	one := x one.
+	argSinh := ((x squared + one) sqrt + x) ln.
+	self negative ifTrue: [argSinh inPlaceNegated].
+	^argSinh asArbitraryPrecisionFloatNumBits: nBits!
+
+argTanh
+	"Evaluate the arg hyperbolic cosine of the receiver."
+
+	| argTanh x one |
+	self isZero ifTrue: [^self].
+	self exponent negated > nBits ifTrue: [^self].
+	x := self asArbitraryPrecisionFloatNumBits: 12 + nBits + (0 max: self exponent negated).
+	x inPlaceAbs.
+	one := x one.
+	x >= one ifTrue: [self error: 'cannot evaluate argTanh of number of magnitude >= 1'].
+	argTanh := ((one + x) / (one - x)) ln.
+	argTanh inPlaceTimesTwoPower: -1.
+	self negative ifTrue: [argTanh inPlaceNegated].
+	^argTanh asArbitraryPrecisionFloatNumBits: nBits!
+
 asArbitraryPrecisionFloatNumBits: n 
 	^ nBits = n
 		ifTrue: [self]
@@ -776,6 +821,35 @@ inPlaceReciprocal
 		
 	mantissa := (1 bitShift: h + nBits + 1) + ma quo: (self shift: mantissa by: 1).
 	biasedExponent := biasedExponent negated - h - nBits.
+	self round!
+
+inPlaceSqrt
+	"Replace the receiver by its square root."
+
+	| guess guessSquared delta shift |
+	self negative 
+		ifTrue: 
+			[^ FloatingPointException signal: 'sqrt undefined for number less than zero.'].
+	self isZero ifTrue: [^self].
+
+	shift := 2 * nBits - mantissa highBit.
+	biasedExponent := biasedExponent - shift.
+	biasedExponent odd
+		ifTrue:
+			[shift := shift + 1.
+			biasedExponent := biasedExponent - 1].
+	mantissa := mantissa bitShift: shift.
+	guess := mantissa bitShift: mantissa highBit + 1 // 2.
+	[
+		guessSquared := guess * guess.
+		delta := guessSquared - mantissa quo: (guess bitShift: 1).
+		delta = 0 ] whileFalse:
+			[ guess := guess - delta ].
+	guessSquared = mantissa
+		ifFalse:
+			[(guessSquared - guess - mantissa) negative ifFalse: [guess := guess - 1]].
+	mantissa := guess.
+	biasedExponent := biasedExponent quo: 2.
 	self round!
 
 inPlaceSubtract: b 
@@ -1109,14 +1183,14 @@ sqrt
 	self < 0 
 		ifTrue: 
 			[^ FloatingPointException signal: 'undefined if less than zero.'].
+	self isZero ifTrue: [^self].
 
 	"use additional bits"
 	decimalPlaces := nBits + 16.
-
-	"constants"
-	one := 1 asArbitraryPrecisionFloatNumBits: decimalPlaces.
-	one normalize.
 	n := self asArbitraryPrecisionFloatNumBits: decimalPlaces.
+	
+	"constants"
+	one := n one.
 
 	"normalize n"
 	norm := n exponent quo: 2.
@@ -1124,12 +1198,12 @@ sqrt
 
 	"Initial guess for sqrt(1/n)"
 	previousGuess := self class 
-				mantissa: 1
-				exponent: (n exponent negated quo: 2)
+				mantissa: 3
+				exponent: -2 - (n exponent quo: 2)
 				nBits: decimalPlaces.
 	guess := previousGuess copy.
 
-	"use iterations x(n+1) := x*( 1 +  (1-x*x*n)/2) to guess sqrt(1/n)"
+	"use iterations x(k+1) := x*( 1 +  (1-x*x*n)/2) to guess sqrt(1/n)"
 	
 	[guess inPlaceMultiplyNoRoundBy: guess.
 	guess inPlaceMultiplyBy: n.
@@ -1143,7 +1217,7 @@ sqrt
 	guess inPlaceMultiplyNoRoundBy: previousGuess.
 	guess negative ifTrue: [guess inPlaceNegated].
 
-	stopIteration] 
+	guess isZero or: [stopIteration]] 
 			whileFalse: 
 				[guess round.
 				previousGuess inPlaceCopy: guess].
@@ -1225,6 +1299,9 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #arcSin!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #arcTan!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #arcTan:!mathematical!public! !
+!ArbitraryPrecisionFloat categoriesFor: #argCosh!mathematical!public! !
+!ArbitraryPrecisionFloat categoriesFor: #argSinh!mathematical!public! !
+!ArbitraryPrecisionFloat categoriesFor: #argTanh!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #asArbitraryPrecisionFloatNumBits:!converting!public! !
 !ArbitraryPrecisionFloat categoriesFor: #asFloat!converting!public! !
 !ArbitraryPrecisionFloat categoriesFor: #asTrueFraction!converting!public! !
@@ -1251,6 +1328,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceMultiplyNoRoundBy:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceNegated!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceReciprocal!private! !
+!ArbitraryPrecisionFloat categoriesFor: #inPlaceSqrt!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceSubtract:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceSubtractNoRound:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceTimesTwoPower:!private! !
