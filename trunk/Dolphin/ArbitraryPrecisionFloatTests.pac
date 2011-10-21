@@ -70,6 +70,10 @@ hyperbolicSerie
 inverseTrigonometricSerie
 	^((-20 to: 20) collect: [:e | (e / 20) asFloat]) , ((-6 to: 6) collect: [:e | (e / 7) asFloat])!
 
+largeTrigonometricSerie
+	^#(
+		1.0e15 1.1e21 1.2e28 1.0e32 1.1e34 -1.23e51 1.345e67 1.777e151 1.211e308)!
+
 setUp
 	zero := 0 asArbitraryPrecisionFloatNumBits: Float precision.
 	one := 1 asArbitraryPrecisionFloatNumBits: Float precision.
@@ -84,15 +88,26 @@ testArcCos
 	badArcCos := self checkDoublePrecisionSerieVsFloat: self inverseTrigonometricSerie forFunction: #arcCos.
 	badArcCos isEmpty ifFalse: [Transcript cr; show: 'bad arcCos for ' , badArcCos printString]!
 
+testArcCosDomainError
+	self should: [(2 asArbitraryPrecisionFloatNumBits: 24) arcCos] raise: Error.
+	self should: [(-3 asArbitraryPrecisionFloatNumBits: 24) arcCos] raise: Error.!
+
 testArCosh
 	| serie |
 	serie := (((1 to: 10) , #(1.0001e0 100.0e0 1000.0e0 1.0e20)) collect: [:e | e asFloat]).
 	self checkDoublePrecisionSerie: serie forFunction: #arCosh!
 
+testArCoshDomainError
+	self should: [(1/2 asArbitraryPrecisionFloatNumBits: 24) arCosh] raise: Error!
+
 testArcSin
 	| badArcSin |
 	badArcSin := self checkDoublePrecisionSerieVsFloat: self inverseTrigonometricSerie forFunction: #arcSin.
 	badArcSin isEmpty ifFalse: [Transcript cr; show: 'bad arcSin for ' , badArcSin printString]!
+
+testArcSinDomainError
+	self should: [(2 asArbitraryPrecisionFloatNumBits: 24) arcSin] raise: Error.
+	self should: [(-3 asArbitraryPrecisionFloatNumBits: 24) arcSin] raise: Error.!
 
 testArcTan
 	| badArcTan serie |
@@ -120,6 +135,136 @@ testArTanh
 	| serie |
 	serie := ((-19 to: 19) collect: [:e | (e / 20) asFloat]) , ((-6 to: 6) collect: [:e | (e / 7) asFloat]) , #(1.0e-20 1.0e-10 0.99e0 0.9999e0 0.999999e0).
 	self checkDoublePrecisionSerie: serie forFunction: #arTanh!
+
+testArTanhDomainError
+	self should: [(2 asArbitraryPrecisionFloatNumBits: 24) arTanh] raise: Error.
+	self should: [(-3 asArbitraryPrecisionFloatNumBits: 24) arTanh] raise: Error.!
+
+testCoercingDivide
+	(Array with: 1/2 with: 0.5e0 with: 0.5s1) do: [:heteroHalf |
+		self assert: one / heteroHalf = two.
+		self assert: (one / heteroHalf) class = one class.
+		self assert: (one / heteroHalf) numBits = one numBits.
+		self assert: heteroHalf / one = half.
+		self assert: (heteroHalf / one) class = one class.
+		self assert: (heteroHalf / one) numBits = one numBits].
+
+	self assert: one / 2 = half.
+	self assert: (one / 2) class = one class.
+	self assert: (one / 2) numBits = one numBits.
+	self assert: -2 / two = minusOne.
+	self assert: (-2 / two) class = two class.
+	self assert: (-2 / two) numBits = two numBits.!
+
+testCoercingEqual
+	self assert: half = (1/2).
+	self assert: (1/2) = half.
+	self deny: half = (1/3).
+	self deny: (1/3) = half.
+
+	self assert: two = 2.
+	self assert: -2 = minusTwo.
+	self deny: -3 = two.
+	self deny: two = 3.
+
+	self assert: half = (0.5e0).
+	self assert: (0.5e0) = half.
+	self deny: half = (0.33e0).
+	self deny: (0.33e0) = half.
+
+	self assert: half = (0.5d0).
+	self assert: (0.5d0) = half.
+	self deny: half = (0.33d0).
+	self deny: (0.33d0) = half.
+
+	self assert: half = (0.5s1).
+	self assert: (0.5s1) = half.
+	self deny: half = (0.33s2).
+	self deny: (0.33s2) = half.!
+
+testCoercingLessThan
+	self deny: half < (1/2).
+	self assert: (1/3) < half.
+	self assert: minusOne < (1/2).
+	self deny: (1/3) < minusTwo.
+
+	self assert: two < 3.
+	self deny: two < 2.
+	self deny: two < 1.
+	self deny: two < -1.
+	self assert:  minusTwo < -1.
+	self assert:  minusTwo < 1.
+	self deny: minusTwo < -2.
+	self deny: minusTwo < -3.
+
+	self deny: half < (0.5e0).
+	self deny: half < (0.33e0).
+	self assert: half < (0.66e0).
+	self deny: (0.5e0) < half.
+	self assert: (0.33e0) < half.
+	self deny: (0.66e0) < half.
+
+	self deny: half < (0.5d0).
+	self deny: half < (0.33d0).
+	self assert: half < (0.66d0).
+	self deny: (0.5d0) < half.
+	self assert: (0.33d0) < half.
+	self deny: (0.66d0) < half.
+
+	self deny: half < (0.5s1).
+	self deny: half < (0.33s2).
+	self assert: half < (0.66s2).
+	self deny: (0.5s1) < half.
+	self assert: (0.33s2) < half.
+	self deny: (0.66s2) < half.!
+
+testCoercingMultiply
+	(Array with: 1/2 with: 0.5e0 with: 0.5s1) do: [:heteroHalf |
+		self assert: two * heteroHalf = one.
+		self assert: (two * heteroHalf) class = half class.
+		self assert: (two * heteroHalf) numBits = half numBits.
+		self assert: heteroHalf * two = one.
+		self assert: (heteroHalf * two) class = half class.
+		self assert: (heteroHalf * two) numBits = half numBits].
+
+	self assert: minusOne * 2 = minusTwo.
+	self assert: (minusOne * 2) class = minusOne class.
+	self assert: (minusOne * 2) numBits = minusOne numBits.
+	self assert: 2 * one = two.
+	self assert: (2 * one) class = one class.
+	self assert: (2 * one) numBits = one numBits.!
+
+testCoercingSubtract
+	(Array with: 1/2 with: 0.5e0 with: 0.5s1) do: [:heteroHalf |
+		self assert: half - heteroHalf = zero.
+		self assert: (half - heteroHalf) class = half class.
+		self assert: (half - heteroHalf) numBits = half numBits.
+		self assert: heteroHalf - half = zero.
+		self assert: (heteroHalf - half) class = half class.
+		self assert: (heteroHalf - half) numBits = half numBits].
+
+	self assert: one - 1 = zero.
+	self assert: (one - 1) class = minusOne class.
+	self assert: (one - 1) numBits = minusOne numBits.
+	self assert: -2 - minusTwo = zero.
+	self assert: (-2 - minusTwo) class = minusTwo class.
+	self assert: (-2 - minusTwo) numBits = minusTwo numBits.!
+
+testCoercingSum
+	(Array with: 1/2 with: 0.5e0 with: 0.5s1) do: [:heteroHalf |
+		self assert: half + heteroHalf = one.
+		self assert: (half + heteroHalf) class = half class.
+		self assert: (half + heteroHalf) numBits = half numBits.
+		self assert: heteroHalf + half = one.
+		self assert: (heteroHalf + half) class = half class.
+		self assert: (heteroHalf + half) numBits = half numBits].
+
+	self assert: minusOne + 1 = zero.
+	self assert: (minusOne + 1) class = minusOne class.
+	self assert: (minusOne + 1) numBits = minusOne numBits.
+	self assert: 2 + minusTwo = zero.
+	self assert: (2 + minusTwo) class = minusTwo class.
+	self assert: (2 + minusTwo) numBits = minusTwo numBits.!
 
 testCos
 	| badCos |
@@ -155,6 +300,21 @@ testExpLn
 
 	self assert: (5 asArbitraryPrecisionFloatNumBits: Float precision) exp asFloat = 5 asFloat exp.
 	self assert: (5 asArbitraryPrecisionFloatNumBits: Float precision) exp ln asFloat = 5 asFloat exp ln.!
+
+testGreaterThan
+	
+	self assert: zero < one.
+	self deny: one > two.
+	self deny: two > huge.
+	self deny: minusOne > one.
+	self deny: minusTwo > minusOne.
+	self deny: minusTwo > huge.
+	
+	self assert: huge > one.
+	self assert: huge > zero.
+	self assert: huge > minusOne.
+	self assert: one > minusOne.
+	self assert: minusOne > minusTwo.!
 
 testIEEEArithmeticVersusFloat
 	| floats ops ref new |
@@ -243,6 +403,9 @@ testLn
 	badLn := self checkDoublePrecisionSerieVsFloat: serie forFunction: #ln.
 	badLn isEmpty ifFalse: [Transcript cr; show: 'bad ln for ' , badLn printString]!
 
+testLnDomainError
+	self should: [(-2 asArbitraryPrecisionFloatNumBits: 24) ln] raise: Error.!
+
 testLnVsFloat
 	1 to: 100
 		do: 
@@ -293,27 +456,46 @@ testRoundToNearestEven
 	"Check that IEEE default rounding mode is honoured,
 	that is rounding to nearest even"
 		
-	self assert: ((one timesTwoPower: 52)+(0+(1/4))) asTrueFraction = ((1 bitShift: 52)+0).
-	self assert: ((one timesTwoPower: 52)+(0+(1/2))) asTrueFraction = ((1 bitShift: 52)+0).
-	self assert: ((one timesTwoPower: 52)+(0+(3/4))) asTrueFraction = ((1 bitShift: 52)+1).
-	self assert: ((one timesTwoPower: 52)+(1+(1/4))) asTrueFraction = ((1 bitShift: 52)+1).
-	self assert: ((one timesTwoPower: 52)+(1+(1/2))) asTrueFraction = ((1 bitShift: 52)+2).
-	self assert: ((one timesTwoPower: 52)+(1+(3/4))) asTrueFraction = ((1 bitShift: 52)+2).!
+	self assert: ((one timesTwoPower: 52)+(0+(1/4))) asFraction = ((1 bitShift: 52)+0).
+	self assert: ((one timesTwoPower: 52)+(0+(1/2))) asFraction = ((1 bitShift: 52)+0).
+	self assert: ((one timesTwoPower: 52)+(0+(3/4))) asFraction = ((1 bitShift: 52)+1).
+	self assert: ((one timesTwoPower: 52)+(1+(1/4))) asFraction = ((1 bitShift: 52)+1).
+	self assert: ((one timesTwoPower: 52)+(1+(1/2))) asFraction = ((1 bitShift: 52)+2).
+	self assert: ((one timesTwoPower: 52)+(1+(3/4))) asFraction = ((1 bitShift: 52)+2).!
 
 testRoundToNearestEvenAgainstIEEEDouble
 	"Check that IEEE default rounding mode is honoured"
 
 	#(1 2 3 5 6 7) do: 
 			[:i | 
-			self assert: ((one timesTwoPower: 52) + (i / 4)) asTrueFraction 
-						= ((1 asFloat timesTwoPower: 52) + (i / 4)) asTrueFraction.
-			self assert: ((one timesTwoPower: 52) - (i / 4)) asTrueFraction 
-						= ((1 asFloat timesTwoPower: 52) - (i / 4)) asTrueFraction]!
+			self assert: ((one timesTwoPower: 52) + (i / 4)) asFraction 
+						= ((1 asFloat timesTwoPower: 52) + (i / 4)) asFraction.
+			self assert: ((one timesTwoPower: 52) - (i / 4)) asFraction 
+						= ((1 asFloat timesTwoPower: 52) - (i / 4)) asFraction]!
 
 testSin
 	| badSin |
 	badSin := self checkDoublePrecisionSerieVsFloat: self trigonometricSerie forFunction: #sin.
 	badSin isEmpty ifFalse: [Transcript cr; show: 'bad sin for angles (degrees) ' , (badSin collect: [:i | i radiansToDegrees rounded]) printString]!
+
+testSincos
+	self trigonometricSerie do: [:aFloat |
+		| x sc s c |
+		x := aFloat asArbitraryPrecisionFloatNumBits: 53.
+		sc := x sincos.
+		s := x sin.
+		c := x cos.
+		self assert: sc size = 2.
+
+		self assert: sc first = s.
+		self assert: sc last = c]!
+
+testSinCos
+	-720 to: 720 by: 24 do: [:degrees |
+		| arb |
+		arb := degrees asArbitraryPrecisionFloatNumBits: 53.
+		arb := arb * arb pi / 180.
+		self assert: arb sincos = (Array with: arb sin with: arb cos)]!
 
 testSinh
 	self checkDoublePrecisionSerie: self hyperbolicSerie forFunction: #sinh!
@@ -326,6 +508,9 @@ testSqrt
 	serie := ((0 to: 20) collect: [:e | e asFloat]) , ((2 to: 20) collect: [:e | e reciprocal asFloat]).
 	badSqrt := self checkDoublePrecisionSerieVsFloat: serie forFunction: #sqrt.
 	badSqrt isEmpty ifFalse: [Transcript cr; show: 'bad sqrt for ' , badSqrt printString]!
+
+testSqrtDomainError
+	self should: [(-2 asArbitraryPrecisionFloatNumBits: 24) sqrt] raise: Error.!
 
 testSubtract
 	self assert: zero - zero = zero.
@@ -361,6 +546,15 @@ testTan
 testTanh
 	self checkDoublePrecisionSerie: self hyperbolicSerie forFunction: #tanh!
 
+testVeryLargeCos
+	self checkDoublePrecisionSerie: self largeTrigonometricSerie forFunction: #cos.!
+
+testVeryLargeSin
+	self checkDoublePrecisionSerie: self largeTrigonometricSerie forFunction: #sin.!
+
+testVeryLargeTan
+	self checkDoublePrecisionSerie: self largeTrigonometricSerie forFunction: #tan.!
+
 testZeroOne
 	"check computation of pi"
 
@@ -376,24 +570,37 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #checkDoublePrecisionSerieVsFloat:forFunction:!private! !
 !ArbitraryPrecisionFloatTest categoriesFor: #hyperbolicSerie!private!testing-hyperbolic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #inverseTrigonometricSerie!private!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #largeTrigonometricSerie!private!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #setUp!public!setup! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testArcCos!public!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testArcCosDomainError!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testArCosh!public!testing-hyperbolic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testArCoshDomainError!public!testing-hyperbolic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testArcSin!public!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testArcSinDomainError!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testArcTan!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testArcTan2!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testArSinh!public!testing-hyperbolic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testArTanh!public!testing-hyperbolic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testArTanhDomainError!public!testing-hyperbolic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testCoercingDivide!public!testing-arithmetic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testCoercingEqual!public!testing-arithmetic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testCoercingLessThan!public!testing-arithmetic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testCoercingMultiply!public!testing-arithmetic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testCoercingSubtract!public!testing-arithmetic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testCoercingSum!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testCos!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testCosh!public!testing-hyperbolic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testEqual!public!testing-compare! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testExp!public!testing-functions! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testExpLn!public!testing-functions! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testGreaterThan!public!testing-compare! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testIEEEArithmeticVersusFloat!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testIEEEArithmeticVersusIntegerAndFraction!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testIsZero!public!testing-compare! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testLessThan!public!testing-compare! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testLn!public!testing-functions! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testLnDomainError!public!testing-functions! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testLnVsFloat!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testMultiply!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testNegated!public!testing-arithmetic! !
@@ -403,12 +610,18 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #testRoundToNearestEven!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testRoundToNearestEvenAgainstIEEEDouble!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testSin!public!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testSincos!public!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testSinCos!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testSinh!public!testing-hyperbolic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testSqrt!public!testing-functions! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testSqrtDomainError!public!testing-functions! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testSubtract!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testSum!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testTan!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testTanh!public!testing-hyperbolic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testVeryLargeCos!public!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testVeryLargeSin!public!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testVeryLargeTan!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testZeroOne!public!testing-constants! !
 !ArbitraryPrecisionFloatTest categoriesFor: #trigonometricSerie!private!testing-trigonometry! !
 
