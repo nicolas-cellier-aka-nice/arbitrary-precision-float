@@ -457,6 +457,23 @@ arcCos
 	self negative ifTrue: [arcCos := x pi - arcCos].
 	^arcCos asArbitraryPrecisionFloatNumBits: nBits!
 
+arCosh
+	"Evaluate the area hyperbolic cosine of the receiver."
+
+	| arCosh x one y two |
+	x := self asArbitraryPrecisionFloatNumBits: 6 + nBits.
+	one := x one.
+	x < one ifTrue: [self error: 'cannot compute arCosh of a number less than 1'].
+	x = one ifTrue: [^self zero].
+	y := x - one.
+	y < one
+		ifTrue:
+			[y := y asArbitraryPrecisionFloatNumBits: 6 + nBits + (y exponent negated).
+			two := one timesTwoPower: 1.
+			arCosh := ((y * (y + two)) sqrt + y + one) ln]
+		ifFalse: [arCosh := ((x squared - one) sqrt + x) ln].
+	^arCosh asArbitraryPrecisionFloatNumBits: nBits!
+
 arcSin
 	"Evaluate the arc sine of the receiver."
 
@@ -516,50 +533,33 @@ arcTan: denominator
 						ifTrue: [ arcTan + arcTan pi ]
 						ifFalse: [ arcTan - arcTan pi ]]) asArbitraryPrecisionFloatNumBits: precision]]!
 
-argCosh
-	"Evaluate the arg hyperbolic cosine of the receiver."
+arSinh
+	"Evaluate the area hyperbolic cosine of the receiver."
 
-	| argCosh x one y two |
-	x := self asArbitraryPrecisionFloatNumBits: 6 + nBits.
-	one := x one.
-	x < one ifTrue: [self error: 'cannot compute argCosh of a number less than 1'].
-	x = one ifTrue: [^self zero].
-	y := x - one.
-	y < one
-		ifTrue:
-			[y := y asArbitraryPrecisionFloatNumBits: 6 + nBits + (y exponent negated).
-			two := one timesTwoPower: 1.
-			argCosh := ((y * (y + two)) sqrt + y + one) ln]
-		ifFalse: [argCosh := ((x squared - one) sqrt + x) ln].
-	^argCosh asArbitraryPrecisionFloatNumBits: nBits!
-
-argSinh
-	"Evaluate the arg hyperbolic cosine of the receiver."
-
-	| argSinh x one |
+	| arSinh x one |
 	self isZero ifTrue: [^self].
 	self exponent negated > nBits ifTrue: [^self].
 	x := self asArbitraryPrecisionFloatNumBits: 6 + nBits + (0 max: self exponent negated).
 	x inPlaceAbs.
 	one := x one.
-	argSinh := ((x squared + one) sqrt + x) ln.
-	self negative ifTrue: [argSinh inPlaceNegated].
-	^argSinh asArbitraryPrecisionFloatNumBits: nBits!
+	arSinh := ((x squared + one) sqrt + x) ln.
+	self negative ifTrue: [arSinh inPlaceNegated].
+	^arSinh asArbitraryPrecisionFloatNumBits: nBits!
 
-argTanh
-	"Evaluate the arg hyperbolic cosine of the receiver."
+arTanh
+	"Evaluate the area hyperbolic cosine of the receiver."
 
-	| argTanh x one |
+	| arTanh x one |
 	self isZero ifTrue: [^self].
 	self exponent negated > nBits ifTrue: [^self].
 	x := self asArbitraryPrecisionFloatNumBits: 12 + nBits + (0 max: self exponent negated).
 	x inPlaceAbs.
 	one := x one.
-	x >= one ifTrue: [self error: 'cannot evaluate argTanh of number of magnitude >= 1'].
-	argTanh := ((one + x) / (one - x)) ln.
-	argTanh inPlaceTimesTwoPower: -1.
-	self negative ifTrue: [argTanh inPlaceNegated].
-	^argTanh asArbitraryPrecisionFloatNumBits: nBits!
+	x >= one ifTrue: [self error: 'cannot evaluate arTanh of number of magnitude >= 1'].
+	arTanh := ((one + x) / (one - x)) ln.
+	arTanh inPlaceTimesTwoPower: -1.
+	self negative ifTrue: [arTanh inPlaceNegated].
+	^arTanh asArbitraryPrecisionFloatNumBits: nBits!
 
 asArbitraryPrecisionFloatNumBits: n 
 	^ nBits = n
@@ -1296,12 +1296,12 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #add:!arithmetic-internal!private! !
 !ArbitraryPrecisionFloat categoriesFor: #agm:!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #arcCos!mathematical!public! !
+!ArbitraryPrecisionFloat categoriesFor: #arCosh!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #arcSin!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #arcTan!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #arcTan:!mathematical!public! !
-!ArbitraryPrecisionFloat categoriesFor: #argCosh!mathematical!public! !
-!ArbitraryPrecisionFloat categoriesFor: #argSinh!mathematical!public! !
-!ArbitraryPrecisionFloat categoriesFor: #argTanh!mathematical!public! !
+!ArbitraryPrecisionFloat categoriesFor: #arSinh!mathematical!public! !
+!ArbitraryPrecisionFloat categoriesFor: #arTanh!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #asArbitraryPrecisionFloatNumBits:!converting!public! !
 !ArbitraryPrecisionFloat categoriesFor: #asFloat!converting!public! !
 !ArbitraryPrecisionFloat categoriesFor: #asTrueFraction!converting!public! !
