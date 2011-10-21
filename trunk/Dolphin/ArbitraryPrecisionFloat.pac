@@ -728,9 +728,9 @@ generality
 	"Private - Answer the generality of the receiver.
 	Answer a priority higher than Float if more digits..."
 
-	^nBits > Float precision
-		ifTrue: [41]
-		ifFalse: [39]
+	^nBits >= Float precision
+		ifTrue: [Float zero generality + 1]
+		ifFalse: [Float zero generality - 1]
 !
 
 greaterThanFraction: aFraction
