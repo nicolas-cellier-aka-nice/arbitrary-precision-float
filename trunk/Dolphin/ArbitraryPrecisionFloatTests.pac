@@ -84,6 +84,11 @@ testArcCos
 	badArcCos := self checkDoublePrecisionSerieVsFloat: self inverseTrigonometricSerie forFunction: #arcCos.
 	badArcCos isEmpty ifFalse: [Transcript cr; show: 'bad arcCos for ' , badArcCos printString]!
 
+testArCosh
+	| serie |
+	serie := (((1 to: 10) , #(1.0001e0 100.0e0 1000.0e0 1.0e20)) collect: [:e | e asFloat]).
+	self checkDoublePrecisionSerie: serie forFunction: #arCosh!
+
 testArcSin
 	| badArcSin |
 	badArcSin := self checkDoublePrecisionSerieVsFloat: self inverseTrigonometricSerie forFunction: #arcSin.
@@ -106,20 +111,15 @@ testArcTan2
 			xd := xf asArbitraryPrecisionFloatNumBits: Float precision * 2.
 			self assert: ((yd arcTan: xd) asFloat - (yf arcTan: xf) asFloat) isZero]].!
 
-testArgCosh
-	| serie |
-	serie := (((1 to: 10) , #(1.0001e0 100.0e0 1000.0e0 1.0e20)) collect: [:e | e asFloat]).
-	self checkDoublePrecisionSerie: serie forFunction: #argCosh!
-
-testArgSinh
+testArSinh
 	| serie |
 	serie := (((-5 to: 10) , #(1.0e-20 1.0e-10  0.9999e0 1.0001e0 100.0e0 1000.0e0 1.0e20)) collect: [:e | e asFloat]).
-	self checkDoublePrecisionSerie: serie forFunction: #argSinh!
+	self checkDoublePrecisionSerie: serie forFunction: #arSinh!
 
-testArgTanh
+testArTanh
 	| serie |
 	serie := ((-19 to: 19) collect: [:e | (e / 20) asFloat]) , ((-6 to: 6) collect: [:e | (e / 7) asFloat]) , #(1.0e-20 1.0e-10 0.99e0 0.9999e0 0.999999e0).
-	self checkDoublePrecisionSerie: serie forFunction: #argTanh!
+	self checkDoublePrecisionSerie: serie forFunction: #arTanh!
 
 testCos
 	| badCos |
@@ -378,12 +378,12 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #inverseTrigonometricSerie!private!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #setUp!public!setup! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testArcCos!public!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testArCosh!public!testing-hyperbolic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testArcSin!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testArcTan!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testArcTan2!public!testing-trigonometry! !
-!ArbitraryPrecisionFloatTest categoriesFor: #testArgCosh!public!testing-hyperbolic! !
-!ArbitraryPrecisionFloatTest categoriesFor: #testArgSinh!public!testing-hyperbolic! !
-!ArbitraryPrecisionFloatTest categoriesFor: #testArgTanh!public!testing-hyperbolic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testArSinh!public!testing-hyperbolic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testArTanh!public!testing-hyperbolic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testCos!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testCosh!public!testing-hyperbolic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testEqual!public!testing-compare! !
