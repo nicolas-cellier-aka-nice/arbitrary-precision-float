@@ -1,0 +1,395 @@
+| package |
+package := Package name: 'ArbitraryPrecisionFloatTests'.
+package paxVersion: 1;
+	basicComment: ''.
+
+
+package classNames
+	add: #ArbitraryPrecisionFloatTest;
+	yourself.
+
+package binaryGlobalNames: (Set new
+	yourself).
+
+package globalAliases: (Set new
+	yourself).
+
+package setPrerequisites: (IdentitySet new
+	add: '..\..\Documents and Settings\cellier\Mes documents\Dolphin Smalltalk X6\Object Arts\Dolphin\Base\Dolphin';
+	add: '..\..\Documents and Settings\cellier\Mes documents\Dolphin Smalltalk X6\Camp Smalltalk\SUnit\SUnit';
+	yourself).
+
+package!
+
+"Class Definitions"!
+
+TestCase subclass: #ArbitraryPrecisionFloatTest
+	instanceVariableNames: 'zero one two half minusOne minusTwo huge'
+	classVariableNames: ''
+	poolDictionaries: ''
+	classInstanceVariableNames: ''!
+
+"Global Aliases"!
+
+
+"Loose Methods"!
+
+"End of package definition"!
+
+"Source Globals"!
+
+"Classes"!
+
+ArbitraryPrecisionFloatTest guid: (GUID fromString: '{642E6D3F-8269-423C-8A82-B8C013E2C79E}')!
+ArbitraryPrecisionFloatTest comment: 'Test to check FloatingPoint numbers with arbitrary precision'!
+!ArbitraryPrecisionFloatTest categoriesForClass!Unclassified! !
+!ArbitraryPrecisionFloatTest methodsFor!
+
+checkDoublePrecisionSerie: serie forFunction: func 
+	serie do: [:y |
+		| arb dbl farb fdbl |
+		arb := y asArbitraryPrecisionFloatNumBits: Float precision.
+		dbl := arb asArbitraryPrecisionFloatNumBits: Float precision * 2.
+		farb := arb perform: func.
+		fdbl := (dbl perform: func) asArbitraryPrecisionFloatNumBits: Float precision.
+		self assert: (fdbl - farb) isZero]!
+
+checkDoublePrecisionSerieVsFloat: serie forFunction: func 
+	^serie reject: [:y |
+		| arb dbl farb fdbl |
+		arb := y asArbitraryPrecisionFloatNumBits: Float precision.
+		dbl := arb asArbitraryPrecisionFloatNumBits: Float precision * 2.
+		farb := arb perform: func.
+		fdbl := (dbl perform: func) asArbitraryPrecisionFloatNumBits: Float precision.
+		self assert: (fdbl - farb) isZero.
+		[(y asFloat perform: func) = farb] on: ZeroDivide do: [false]]!
+
+hyperbolicSerie
+	^#(-3.0e0  -0.1e0  0.0e0  1.0e-20  1.0e-10  0.99e0 1.0e0  2.5e0  3.0e0  10.25e0) , (Array with: (3/10) asFloat with: (22/7) asFloat)!
+
+inverseTrigonometricSerie
+	^((-20 to: 20) collect: [:e | (e / 20) asFloat]) , ((-6 to: 6) collect: [:e | (e / 7) asFloat])!
+
+setUp
+	zero := 0 asArbitraryPrecisionFloatNumBits: Float precision.
+	one := 1 asArbitraryPrecisionFloatNumBits: Float precision.
+	two := 2 asArbitraryPrecisionFloatNumBits: Float precision.
+	half := 1/2 asArbitraryPrecisionFloatNumBits: Float precision.
+	minusOne := -1 asArbitraryPrecisionFloatNumBits: Float precision.
+	minusTwo := -2 asArbitraryPrecisionFloatNumBits: Float precision.
+	huge := (10 raisedTo: 100) asArbitraryPrecisionFloatNumBits: Float precision.!
+
+testArcCos
+	| badArcCos |
+	badArcCos := self checkDoublePrecisionSerieVsFloat: self inverseTrigonometricSerie forFunction: #arcCos.
+	badArcCos isEmpty ifFalse: [Transcript cr; show: 'bad arcCos for ' , badArcCos printString]!
+
+testArcSin
+	| badArcSin |
+	badArcSin := self checkDoublePrecisionSerieVsFloat: self inverseTrigonometricSerie forFunction: #arcSin.
+	badArcSin isEmpty ifFalse: [Transcript cr; show: 'bad arcSin for ' , badArcSin printString]!
+
+testArcTan
+	| badArcTan serie |
+	serie := ((-50 to: 50) collect: [:e | (e / 10) asFloat]).
+	badArcTan := self checkDoublePrecisionSerieVsFloat: serie forFunction: #arcTan.
+	badArcTan isEmpty ifFalse: [Transcript cr; show: 'bad arcTan for ' , badArcTan printString]!
+
+testArcTan2
+	-5 to: 5 by: 4/10 do: [:y |
+		| yf yd |
+		yf := y asArbitraryPrecisionFloatNumBits: Float precision.
+		yd := yf asArbitraryPrecisionFloatNumBits: Float precision * 2.
+		-5 to: 5 by: 1/10 do: [:x |
+			| xf xd  |
+			xf := x asArbitraryPrecisionFloatNumBits: Float precision.
+			xd := xf asArbitraryPrecisionFloatNumBits: Float precision * 2.
+			self assert: ((yd arcTan: xd) asFloat - (yf arcTan: xf) asFloat) isZero]].!
+
+testCos
+	| badCos |
+	badCos := self checkDoublePrecisionSerieVsFloat: self trigonometricSerie forFunction: #cos.
+	badCos isEmpty ifFalse: [Transcript cr; show: 'bad cos for angles (degrees) ' , (badCos collect: [:i | i radiansToDegrees rounded]) printString]!
+
+testCosh
+	self checkDoublePrecisionSerie: self hyperbolicSerie forFunction: #cosh!
+
+testEqual
+	self assert: zero = zero.
+	self deny: zero = one.
+	self deny: minusOne = one.
+
+	self assert: zero = 0.
+	self assert: 0 = zero.
+	self assert: zero = 0.0.
+	self assert: 0.0 = zero.
+	
+	self deny: two = (1/2).
+	self deny: (1/2) = two.
+	self deny: zero = 1.0.
+	self deny: 0.0 = one.!
+
+testExp
+	| badExp serie |
+	serie := ((-20 to: 20) collect: [:e |e asFloat]).
+	badExp := self checkDoublePrecisionSerieVsFloat: serie forFunction: #exp.
+	badExp isEmpty ifFalse: [Transcript cr; show: 'bad exp for ' , badExp printString]!
+
+testExpLn
+	self assert: (1 asArbitraryPrecisionFloatNumBits: Float precision) exp asFloat = 1 asFloat exp.
+
+	self assert: (5 asArbitraryPrecisionFloatNumBits: Float precision) exp asFloat = 5 asFloat exp.
+	self assert: (5 asArbitraryPrecisionFloatNumBits: Float precision) exp ln asFloat = 5 asFloat exp ln.!
+
+testIEEEArithmeticVersusFloat
+	| floats ops ref new |
+	floats := #(1.0 2.0 3.0 5.0 10.0 0.5 0.25 1.0e60 0.1 1.1e-30 1.0e-60) asOrderedCollection.
+	-1 to: 1 do: [:pow | floats add: (1.0 timesTwoPower: Float precision + pow); add: (1.0 timesTwoPower: (Float precision + pow) negated)].
+	floats add: Float pi.
+	ops := #(#+ #- #* #/ #= #< #> ).
+	ops
+		do: [:op | floats
+				do: [:f1 | floats
+						do: [:f2 | 
+							ref := f1 perform: op with: f2.
+							new := (f1 asArbitraryPrecisionFloatNumBits:Float precision)
+										perform: op
+										with: (f2 asArbitraryPrecisionFloatNumBits: Float precision).
+							self assert: new = ref.
+							new := f1 perform: op
+										with: (f2 asArbitraryPrecisionFloatNumBits: Float precision).
+							self assert: new = ref.
+							new := (f1 asArbitraryPrecisionFloatNumBits: Float precision) perform: op
+										with: f2.
+							self assert: new = ref]]]!
+
+testIEEEArithmeticVersusIntegerAndFraction
+	"check that results are the same as IEEE 754 accelerated hardware
+	WARNING: this cannot be the case for denormalized numbers (gradual underflow)
+	because our exponent is unlimited"
+
+	| floats ops ref new intAndFractions |
+	floats := #(1.0e0 2.0e0 3.0e0 5.0e0 10.0e0) 
+				, (#(52 53 54 -52 -53 -54) collect: [:e | 1.0e0 timesTwoPower: e]) 
+					, #(0.5e0 0.25e0 1.0e60 0.1e0 1.1e-30 1.0e-60) copyWith: Float pi.
+	intAndFractions := #(1 3 5 10 12345678901234567890 -1 -22 -3) copyWith: 7/9.
+	intAndFractions := intAndFractions , (intAndFractions collect: [:e | e reciprocal]).
+	ops := #(#+ #- #* #/ #= #< #>).
+	ops do: 
+			[:op | 
+			floats do: 
+					[:f1 | 
+					intAndFractions do: 
+							[:f2 | 
+							ref := f1 perform: op with: f2 asFloat.
+							new := (f1 asArbitraryPrecisionFloatNumBits: Float precision) perform: op
+										with: (f2 asArbitraryPrecisionFloatNumBits: Float precision).
+							self assert: new = ref.
+							new := f1 perform: op
+										with: (f2 asArbitraryPrecisionFloatNumBits: Float precision).
+							self assert: new = ref]]].
+	ops := 1/10 = 0.1
+		ifTrue: [#(#+ #- #* #/)]
+		ifFalse: [#(#+ #- #* #/ #= #< #>)]. "BEWARE: ArbitraryPrecisionFloat compare exactly, Float don't unless patched"
+	ops do: 
+			[:op | 
+			floats do: 
+					[:f1 | 
+					intAndFractions do: 
+							[:f2 | 
+							ref := f1 perform: op with: f2.
+							new := (f1 asArbitraryPrecisionFloatNumBits: Float precision) perform: op
+										with: f2.
+							self assert: new = ref]]]!
+
+testIsZero
+	self assert: zero isZero.
+	self deny: one isZero.
+	self deny: minusTwo isZero.!
+
+testLessThan
+	
+	self assert: zero < one.
+	self assert: one < two.
+	self assert: two < huge.
+	self assert: minusOne < one.
+	self assert: minusTwo < minusOne.
+	self assert: minusTwo < huge.
+	
+	self deny: huge < one.
+	self deny: huge < zero.
+	self deny: huge < minusOne.
+	self deny: one < minusOne.
+	self deny: minusOne < minusTwo.!
+
+testLn
+	| badLn serie |
+	serie := ((1 to: 100) collect: [:e |e asFloat]).
+	badLn := self checkDoublePrecisionSerieVsFloat: serie forFunction: #ln.
+	badLn isEmpty ifFalse: [Transcript cr; show: 'bad ln for ' , badLn printString]!
+
+testLnVsFloat
+	1 to: 100
+		do: 
+			[:v | 
+			self assert: (v asArbitraryPrecisionFloatNumBits:Float precision) ln asFloat 
+						= v asFloat ln]!
+
+testMultiply
+	self assert: zero * zero = zero.
+	self assert: zero * minusOne = zero.
+	self assert: huge * zero = zero.
+	self assert: one * zero = zero.
+	
+	self assert: one * two = two.
+	self assert: minusOne * one = minusOne.
+	self assert: minusOne * minusTwo = two.
+	
+	self assert: half * two = one.
+	
+	"check rounding"
+	self assert: huge * one = huge.!
+
+testNegated
+	self assert: zero negated = zero.
+	self assert: one negated = minusOne.
+	self assert: minusTwo negated = two.
+	self assert: huge negated negated = huge.
+!
+
+testNegative
+	
+	self deny: zero negative.
+	self deny: two negative.
+	self assert: minusTwo negative.!
+
+testPi
+	"check computation of pi"
+
+	self assert: (1 asArbitraryPrecisionFloatNumBits: Float precision) pi = Float pi.!
+
+testPositive
+	
+	self assert: zero positive.
+	self assert: one positive.
+	self deny: minusOne positive.!
+
+testRoundToNearestEven
+	"Check that IEEE default rounding mode is honoured,
+	that is rounding to nearest even"
+		
+	self assert: ((one timesTwoPower: 52)+(0+(1/4))) asTrueFraction = ((1 bitShift: 52)+0).
+	self assert: ((one timesTwoPower: 52)+(0+(1/2))) asTrueFraction = ((1 bitShift: 52)+0).
+	self assert: ((one timesTwoPower: 52)+(0+(3/4))) asTrueFraction = ((1 bitShift: 52)+1).
+	self assert: ((one timesTwoPower: 52)+(1+(1/4))) asTrueFraction = ((1 bitShift: 52)+1).
+	self assert: ((one timesTwoPower: 52)+(1+(1/2))) asTrueFraction = ((1 bitShift: 52)+2).
+	self assert: ((one timesTwoPower: 52)+(1+(3/4))) asTrueFraction = ((1 bitShift: 52)+2).!
+
+testRoundToNearestEvenAgainstIEEEDouble
+	"Check that IEEE default rounding mode is honoured"
+
+	#(1 2 3 5 6 7) do: 
+			[:i | 
+			self assert: ((one timesTwoPower: 52) + (i / 4)) asTrueFraction 
+						= ((1 asFloat timesTwoPower: 52) + (i / 4)) asTrueFraction.
+			self assert: ((one timesTwoPower: 52) - (i / 4)) asTrueFraction 
+						= ((1 asFloat timesTwoPower: 52) - (i / 4)) asTrueFraction]!
+
+testSin
+	| badSin |
+	badSin := self checkDoublePrecisionSerieVsFloat: self trigonometricSerie forFunction: #sin.
+	badSin isEmpty ifFalse: [Transcript cr; show: 'bad sin for angles (degrees) ' , (badSin collect: [:i | i radiansToDegrees rounded]) printString]!
+
+testSinh
+	self checkDoublePrecisionSerie: self hyperbolicSerie forFunction: #sinh!
+
+testSqrt
+	self assert: (2 asArbitraryPrecisionFloatNumBits: Float precision) sqrt asFloat = 2 asFloat sqrt.
+
+	"knowing that (10**3) < (2**10), 100 bits are enough for representing 10**30 exactly"
+	self assert: ((10 raisedTo: 30) asArbitraryPrecisionFloatNumBits: 100) sqrt = (10 raisedTo: 15)!
+
+testSubtract
+	self assert: zero - zero = zero.
+	self assert: zero - minusOne = one.
+	self assert: huge - zero = huge.
+	self assert: one - zero = one.
+	
+	self assert: one - minusOne = two.
+	self assert: minusOne - minusTwo = one.
+	self assert: minusOne - one = minusTwo.
+	
+	"check rounding"
+	self assert: huge - one = huge.!
+
+testSum
+	self assert: zero + zero = zero.
+	self assert: zero + minusOne = minusOne.
+	self assert: huge + zero = huge.
+	self assert: one + zero = one.
+	
+	self assert: one + minusOne = zero.
+	self assert: minusOne + two = one.
+	self assert: one + minusTwo = minusOne.
+	
+	"check rounding"
+	self assert: huge + one = huge.!
+
+testTan
+	| badTan |
+	badTan := self checkDoublePrecisionSerieVsFloat: self trigonometricSerie forFunction: #tan.
+	badTan isEmpty ifFalse: [Transcript cr; show: 'bad tan for angles (degrees) ' , (badTan collect: [:i | i radiansToDegrees rounded]) printString]!
+
+testTanh
+	self checkDoublePrecisionSerie: self hyperbolicSerie forFunction: #tanh!
+
+testZeroOne
+	"check computation of pi"
+
+	self assert: (312 asArbitraryPrecisionFloatNumBits: 53) one = 1.
+	self assert: (231 asArbitraryPrecisionFloatNumBits: 24) zero isZero.
+
+	self assert: (213 asArbitraryPrecisionFloatNumBits: 24) one asInteger = 1.
+	self assert: (123 asArbitraryPrecisionFloatNumBits: 53) zero asInteger isZero.!
+
+trigonometricSerie
+	^((-720 to: 720) collect: [:i | i asFloat degreesToRadians])! !
+!ArbitraryPrecisionFloatTest categoriesFor: #checkDoublePrecisionSerie:forFunction:!private! !
+!ArbitraryPrecisionFloatTest categoriesFor: #checkDoublePrecisionSerieVsFloat:forFunction:!private! !
+!ArbitraryPrecisionFloatTest categoriesFor: #hyperbolicSerie!private!testing-hyperbolic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #inverseTrigonometricSerie!private!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #setUp!public!setup! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testArcCos!public!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testArcSin!public!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testArcTan!public!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testArcTan2!public!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testCos!public!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testCosh!public!testing-hyperbolic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testEqual!public!testing-compare! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testExp!public!testing-functions! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testExpLn!public!testing-functions! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testIEEEArithmeticVersusFloat!public!testing-arithmetic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testIEEEArithmeticVersusIntegerAndFraction!public!testing-arithmetic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testIsZero!public!testing-compare! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testLessThan!public!testing-compare! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testLn!public!testing-functions! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testLnVsFloat!public! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testMultiply!public!testing-arithmetic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testNegated!public!testing-arithmetic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testNegative!public!testing-compare! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testPi!public!testing-constants! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testPositive!public!testing-compare! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testRoundToNearestEven!public!testing-arithmetic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testRoundToNearestEvenAgainstIEEEDouble!public!testing-arithmetic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testSin!public!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testSinh!public!testing-hyperbolic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testSqrt!public!testing-functions! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testSubtract!public!testing-arithmetic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testSum!public!testing-arithmetic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testTan!public!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testTanh!public!testing-hyperbolic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testZeroOne!public!testing-constants! !
+!ArbitraryPrecisionFloatTest categoriesFor: #trigonometricSerie!private!testing-trigonometry! !
+
+"Binary Globals"!
+
