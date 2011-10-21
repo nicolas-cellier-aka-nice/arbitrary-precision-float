@@ -106,6 +106,21 @@ testArcTan2
 			xd := xf asArbitraryPrecisionFloatNumBits: Float precision * 2.
 			self assert: ((yd arcTan: xd) asFloat - (yf arcTan: xf) asFloat) isZero]].!
 
+testArgCosh
+	| serie |
+	serie := (((1 to: 10) , #(1.0001e0 100.0e0 1000.0e0 1.0e20)) collect: [:e | e asFloat]).
+	self checkDoublePrecisionSerie: serie forFunction: #argCosh!
+
+testArgSinh
+	| serie |
+	serie := (((-5 to: 10) , #(1.0e-20 1.0e-10  0.9999e0 1.0001e0 100.0e0 1000.0e0 1.0e20)) collect: [:e | e asFloat]).
+	self checkDoublePrecisionSerie: serie forFunction: #argSinh!
+
+testArgTanh
+	| serie |
+	serie := ((-19 to: 19) collect: [:e | (e / 20) asFloat]) , ((-6 to: 6) collect: [:e | (e / 7) asFloat]) , #(1.0e-20 1.0e-10 0.99e0 0.9999e0 0.999999e0).
+	self checkDoublePrecisionSerie: serie forFunction: #argTanh!
+
 testCos
 	| badCos |
 	badCos := self checkDoublePrecisionSerieVsFloat: self trigonometricSerie forFunction: #cos.
@@ -304,10 +319,13 @@ testSinh
 	self checkDoublePrecisionSerie: self hyperbolicSerie forFunction: #sinh!
 
 testSqrt
-	self assert: (2 asArbitraryPrecisionFloatNumBits: Float precision) sqrt asFloat = 2 asFloat sqrt.
-
+	| badSqrt serie |
 	"knowing that (10**3) < (2**10), 100 bits are enough for representing 10**30 exactly"
-	self assert: ((10 raisedTo: 30) asArbitraryPrecisionFloatNumBits: 100) sqrt = (10 raisedTo: 15)!
+	self assert: ((10 raisedTo: 30) asArbitraryPrecisionFloatNumBits: 100) sqrt = (10 raisedTo: 15).
+
+	serie := ((0 to: 20) collect: [:e | e asFloat]) , ((2 to: 20) collect: [:e | e reciprocal asFloat]).
+	badSqrt := self checkDoublePrecisionSerieVsFloat: serie forFunction: #sqrt.
+	badSqrt isEmpty ifFalse: [Transcript cr; show: 'bad sqrt for ' , badSqrt printString]!
 
 testSubtract
 	self assert: zero - zero = zero.
@@ -363,6 +381,9 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #testArcSin!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testArcTan!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testArcTan2!public!testing-trigonometry! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testArgCosh!public!testing-hyperbolic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testArgSinh!public!testing-hyperbolic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testArgTanh!public!testing-hyperbolic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testCos!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testCosh!public!testing-hyperbolic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testEqual!public!testing-compare! !
