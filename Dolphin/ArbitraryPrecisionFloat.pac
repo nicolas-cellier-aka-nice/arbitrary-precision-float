@@ -639,12 +639,16 @@ copy
 	^self shallowCopy!
 
 cos
+	"Answer the cosine of the receiver."
+
 	^(ArbitraryPrecisionFloatForTrigonometry
 		mantissa: mantissa
 		exponent: biasedExponent
 		nBits: nBits) cos!
 
 cosh
+	"Answer the hyperbolic cosine of the receiver."
+
 	| e x |
 	self isZero ifTrue: [^self one].
 	self exponent negated > nBits ifTrue: [^self one].
@@ -1175,18 +1179,24 @@ significandAsInteger
 	^mantissa abs!
 
 sin
+	"Answer the sine of the receiver."
+
 	^(ArbitraryPrecisionFloatForTrigonometry
 		mantissa: mantissa
 		exponent: biasedExponent
 		nBits: nBits) sin!
 
 sincos
+	"Answer an Array with the sine and cosine of the receiver."
+
 	^(ArbitraryPrecisionFloatForTrigonometry
 		mantissa: mantissa
 		exponent: biasedExponent
 		nBits: nBits) sincos!
 
 sinh
+	"Answer the hyperbolic sine of the receiver."
+
 	| e x |
 	self isZero ifTrue: [^self].
 	self exponent negated > nBits ifTrue: [^self].
@@ -1256,12 +1266,16 @@ storeOn: aStream
 	aStream nextPut: $)!
 
 tan
+	"Answer the tangent of the receiver."
+
 	^(ArbitraryPrecisionFloatForTrigonometry
 		mantissa: mantissa
 		exponent: biasedExponent
 		nBits: nBits) tan!
 
 tanh
+	"Answer the hyperbolic tangent of the receiver."
+
 	| e x ep one |
 	self isZero ifTrue: [^self].
 	self exponent negated > nBits ifTrue: [^self].
@@ -1449,11 +1463,11 @@ moduloNegPiToPi
 	twoPi := pi timesTwoPower: 1.
 	x > pi ifTrue:
 		[quo := x + pi quo: twoPi.
-		quo highBit > nBits ifTrue:
+		quo highBit * 2 > nBits ifTrue:
 			[x := (ArbitraryPrecisionFloat
 				mantissa: mantissa abs
 				exponent: biasedExponent
-				nBits: nBits + quo highBit).
+				nBits: nBits * 3 // 2 + quo highBit + 2).
 			pi := x pi.
 			twoPi := pi timesTwoPower: 1.
 			quo := x + pi quo: twoPi].
@@ -1563,6 +1577,26 @@ sin: x
 		inPlaceMultiplyBy: sin;
 		yourself!
 
+sincos
+	"Evaluate the sine and cosine of the receiver"
+
+	| halfPi quarterPi x sincos sinneg cosneg |
+	x := self moduloNegPiToPi.
+	sinneg := x negative.
+	x inPlaceAbs.
+	halfPi := pi timesTwoPower: -1.
+	(cosneg := x > halfPi) ifTrue: [x inPlaceSubtract: pi; inPlaceNegated].
+	quarterPi := halfPi timesTwoPower: -1.
+	x > quarterPi
+		ifTrue:
+			[x inPlaceSubtract: halfPi; inPlaceNegated.
+			sincos := (self sincos: x) reverse]
+		ifFalse:
+			[sincos := self sincos: x].
+	sinneg ifTrue: [sincos first inPlaceNegated].
+	cosneg ifTrue: [sincos last inPlaceNegated].
+	^sincos collect: [:e | e asArbitraryPrecisionFloatNumBits: nBits]!
+
 sincos: x
 	"Evaluate the sine and cosine of x by recursive sin(2x) and cos(2x) formula and power series expansion.
 	Note that it is better to use this method with x <= pi/4."
@@ -1612,6 +1646,7 @@ tan
 !ArbitraryPrecisionFloatForTrigonometry categoriesFor: #powerExpansionSinCos:precision:!private! !
 !ArbitraryPrecisionFloatForTrigonometry categoriesFor: #sin!mathematical!public! !
 !ArbitraryPrecisionFloatForTrigonometry categoriesFor: #sin:!private! !
+!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #sincos!mathematical!public! !
 !ArbitraryPrecisionFloatForTrigonometry categoriesFor: #sincos:!private! !
 !ArbitraryPrecisionFloatForTrigonometry categoriesFor: #tan!mathematical!public! !
 
