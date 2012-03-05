@@ -16,4 +16,23 @@ What do you need to play with ArbitraryPrecisionFloat in Squeak or Pharo?
   * from there download a version of the packages ArbitraryPrecisionFloat and ArbitraryPrecisionFloatTests from this repository (you might want to check http://www.squeaksource.com/ArbitraryPrecisionFl.html for revision history).
   * Then, refer to [UsingArbitraryPrecisionFloat] to get a short introduction about usage.
 
+Another possibility is to open a workspace, enter following code snippet, and evaluate it with do it menu:
+{{{
+"In Squeak"
+Installer ss
+       project: 'ArbitraryPrecisionFl';
+       install: 'ArbitraryPrecisionFloat';
+       install: 'ArbitraryPrecisionFloatTests'.
+}}}
+or:
+{{{
+"In Pharo"
+Gofer new
+    squeaksource: 'ArbitraryPrecisionFl';
+    package: 'ArbitraryPrecisionFloat';
+    load;
+    package: 'ArbitraryPrecisionFloatTests';
+    load.
+}}}
+
 Note that the package is expected to work on Squeak trunk but also back to Squeak 3.9 and possibly earlier, and thus also on all flavours of Pharo to date.
