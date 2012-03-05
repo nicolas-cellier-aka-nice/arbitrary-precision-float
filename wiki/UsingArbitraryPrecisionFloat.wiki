@@ -8,8 +8,12 @@ To play with ArbitraryPrecisionFloat, an easy way is to follow these lines, copy
 = Details =
 
 The first thing is to create an ArbitraryPrecisionFloat. This is generally obtained by converting another Smalltalk Number.
-  {{{1 asArbitraryPrecisionFloatNumBits: 200.}}}<br>
-  {{{1/3 asArbitraryPrecisionFloatNumBits: 200.}}}
+{{{
+1 asArbitraryPrecisionFloatNumBits: 200.
+}}}<br>
+{{{
+1/3 asArbitraryPrecisionFloatNumBits: 200.
+}}}
 
 Like another Float, an ArbitraryPrecisionFloat is inexact, but you can control the precision:
   {{{((1/3) asFloatD asFraction - (1/3)) asFloatD.}}} -> *-1.850371707708594e-17*<br>
