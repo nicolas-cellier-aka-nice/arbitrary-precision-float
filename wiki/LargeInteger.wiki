@@ -3,7 +3,7 @@
 
 = Introduction =
 
-Most Smalltalk dialects provide a LargeInteger library able to perform exact arithmetic on integers of arbitrary length. ArbitraryPrecisionFloat implementation relies on the presence of suche library.
+Most Smalltalk dialects provide a LargeInteger library able to perform exact arithmetic on integers of arbitrary length. ArbitraryPrecisionFloat implementation relies on the presence of such library.
 
 
 = Details =
