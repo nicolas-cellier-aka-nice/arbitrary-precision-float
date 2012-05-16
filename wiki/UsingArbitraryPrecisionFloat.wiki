@@ -59,4 +59,4 @@ For example, in Squeak on MacOSX:
   {{{((7 asArbitraryPrecisionFloatNumBits: 70) ln - (7 asFloatD ln)) / (7 asFloatD ln ulp).}}}
   -> *(ArbitraryPrecisionFloat readFrom: '-0.67017' readStream numBits: 70)*<br><br>
   _Note that *#ulp* is a Squeakism meaning unit of least precision, but you might find equivalent messages in other dialects._
-That's all for this short introduction, let's hope that you'll find a good usage of this class, or at least that these examples will provide educational benefits.
+That's all for this short introduction, let's hope that you'll find a good usage of this class, or at least that these examples will provide educational benefits about floating point arithmetic and inexactness.
