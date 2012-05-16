@@ -1,0 +1,30 @@
+#labels Featured
+#this page gives links to previous work in the domain, some of them used as source of inspiration for the ArbitraryPrecisionFloat package.
+
+= Introduction =
+
+ArbitraryPrecisionFloat is not born ex-nihilo. Several sources of inspiration have helped implementing the library.
+
+
+= Details =
+
+For the core, of course SUN literature about floating point was my main introduction to the subject 25 years ago, and I still recommend reading a copy of the bible [http://docs.oracle.com/cd/E19957-01/806-3568/ncg_goldberg.html What Every Computer Scientist Should Know About Floating-Point Arithmetic].
+
+The main source of inspiration for the math function were:
+  * Scratchpad ([http://www.axiom-developer.org/ Axiom])
+  * Michael C. Ring MAPM C package [http://www.tc.umn.edu/~ringx004/mapm-main.html mapm]
+  * David H. Bailey's MPFUN Fortran package at [http://www.netlib.org/mpfun/ netlib]
+
+Of course, one can always visit the dedicated wikipedia [http://en.wikipedia.org/wiki/Arbitrary-precision_arithmetic pages].
+
+To please Marcus Denker who regularly remind us the existence of a reference INRIA work in the domain, I recommend inquiring also [http://www.mpfr.org/ MPFR].
+
+If you know INRIA, you can bet the library is quite more populated than ArbitraryPrecisionFloat.
+
+As MPFR is built upon [http://gmplib.org/ GMP], it should also be much much faster than a 100% Smalltalk version.
+
+Not sure however if they beat ArbitraryPrecisionFloat for the fun and facility of programming. A Smalltalk environment must have some advantages!
+
+Thus, for casual need, education and experimentation I recommand ArbitraryPrecisionFloat.
+
+For any more involved extensive/intensive usage, it would be reasonnable to switch to above library, or have it linked thru FFI.
