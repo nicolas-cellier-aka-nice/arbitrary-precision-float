@@ -26,13 +26,36 @@ Installer ss
 }}}
 or:
 {{{
-"In Pharo"
+"In Pharo 1 and 2"
 Gofer new
     squeaksource: 'ArbitraryPrecisionFl';
     package: 'ArbitraryPrecisionFloat';
     load;
     package: 'ArbitraryPrecisionFloatTests';
     load.
+}}}
+
+In Pharo 3.0, the ExtendedNumberParser is missing, so another package is necessary:
+{{{
+"In Pharo 3"
+Gofer new
+    squeaksource: 'ArbitraryPrecisionFl';
+    package: 'ExtendedNumberParser';
+    load;
+    package: 'ArbitraryPrecisionFloat';
+    load;
+    package: 'ArbitraryPrecisionFloatTests';
+    load.
+}}}
+
+Alternatively, a [http://code.google.com/p/metacello/ Metacello] configuration is maintained and should work in all versions:
+{{{
+Gofer new
+    squeaksource: 'ArbitraryPrecisionFl';
+    package: 'ConfigurationOfArbitraryPrecisionFloat';
+    load.
+(ConfigurationOfArbitraryPrecisionFloat project version: '1.0') load.
+(ConfigurationOfArbitraryPrecisionFloat project version: '1.0') load: 'Tests'.
 }}}
 
 Note that the package is expected to work on Squeak trunk but also back to Squeak 3.9 and possibly earlier, and thus also on all flavours of Pharo to date.
