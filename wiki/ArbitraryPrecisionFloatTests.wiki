@@ -10,3 +10,32 @@ ArbitraryPrecisionFloatTests is a SUnit TestCase for ArbitraryPrecisionFloat.
 
 Implementation details of the tests are not yet documented.
 SUnit tests are expected to be readable and auto-documented, however, some details might deserve further explanations. 
+
+For example, for testing function f accuracy, one way is self testing with an extended precision: we use higher precision, and check that it leads to the same rounding.
+
+{{{
+    f_single = (x asArbitraryPrecisionFloat: n) perform: f.
+    f_double = (x asArbitraryPrecisionFloat: n*2) perform: f.
+    self assert: (f_double asArbitraryPrecisionFloat: n) = f_single.
+}}}
+
+But such test is subject to DoubleRoundingProblem and must be handled with care. In case of exact tie, we can for example retry with quadruple precision.
+
+Another possibility is to use a power serie expansion using exact arithmetic (using infinite precision of Integer and Fraction) up to a reasonnable length (for example when new terms are several binades below the ulp), then perform a single rounding operation. For example, testing exp(x) at precision p.
+
+{{{
+    f := x asFraction.
+    term := 1.
+    sum := 1.
+    n := 1.
+
+    [term := term * f / n.
+    n := n +1.
+    sum := sum + term.
+    term abs * (2 raisedTo: 2*p) > sum]
+        whileTrue.
+    error := (x exp asFraction - sum) abs.
+    self assert: error < (x ulp / 2)
+}}}
+
+In any case, testing that the implementation will allways round correctly whatever x value is another problem. Even with low precision this cannot be achieved because the exponent are unbounded.
