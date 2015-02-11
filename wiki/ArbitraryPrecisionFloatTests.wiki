@@ -11,12 +11,26 @@ ArbitraryPrecisionFloatTests is a SUnit TestCase for ArbitraryPrecisionFloat.
 Implementation details of the tests are not yet documented.
 SUnit tests are expected to be readable and auto-documented, however, some details might deserve further explanations. 
 
-For example, for testing function f accuracy, one way is self testing with an extended precision: we use higher precision, and check that it leads to the same rounding.
+For example, for testing function f accuracy with precision p, one simple way is to check against some other library, for example versus Smalltalk Float:
 
 {{{
-    f_single = (x asArbitraryPrecisionFloat: n) perform: f.
-    f_double = (x asArbitraryPrecisionFloat: n*2) perform: f.
-    self assert: (f_double asArbitraryPrecisionFloat: n) = f_single.
+    x_arbit := someValue asArbitraryPrecisionFloat: Float precision.
+    x_float := x_arbit asFloat.
+    f_arbit := x_arbit perform: f.
+    f_float := x_float perform: f.
+    self assert: f_arbit = f_float.
+}}}
+
+But this generally just asserts that the Float functions are not correctly rounded. First because libm is generally not correctly rounded, and second because most Smalltalk implementations are not even using libm - like tan being implemented as {{{^self sin/self cos}}}, or worse, cos implemented as {{{^ (self + Halfpi) sin}}}...
+
+Another way is self testing with an extended precision: we use higher precision, and check that it leads to the same rounding.
+
+{{{
+    x_single := someValue asArbitraryPrecisionFloat: p.
+    x_double := x_single asArbitraryPrecisionFloat: 2*p.
+    f_single := x_single perform: f.
+    f_double := x_double perform: f.
+    self assert: (f_double asArbitraryPrecisionFloat: p) = f_single.
 }}}
 
 But such test is subject to DoubleRoundingProblem and must be handled with care. In case of exact tie, we can for example retry with quadruple precision.
@@ -38,4 +52,4 @@ Another possibility is to use a power serie expansion using exact arithmetic (us
     self assert: error < (x exp ulp / 2)
 }}}
 
-In any case, testing that the implementation will allways round correctly whatever x value is another problem. Even with low precision this cannot be achieved because the exponent are unbounded.
+In any case, testing that the implementation will allways round correctly whatever x value is another problem. Even with low precision this cannot be achieved by exhaustive tests, because the exponent are unbounded.
