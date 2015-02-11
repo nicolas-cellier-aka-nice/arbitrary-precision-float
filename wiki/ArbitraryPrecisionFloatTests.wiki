@@ -14,7 +14,7 @@ SUnit tests are expected to be readable and auto-documented, however, some detai
 For example, for testing function f accuracy with precision p, one simple way is to check against some other library, for example versus Smalltalk Float:
 
 {{{
-    x_arbit := someValue asArbitraryPrecisionFloat: Float precision.
+    x_arbit := someValue asArbitraryPrecisionFloatNumBits: Float precision.
     x_float := x_arbit asFloat.
     f_arbit := x_arbit perform: f.
     f_float := x_float perform: f.
@@ -26,11 +26,11 @@ But this generally just asserts that the Float functions are not correctly round
 Another way is self testing with an extended precision: we use higher precision, and check that it leads to the same rounding.
 
 {{{
-    x_single := someValue asArbitraryPrecisionFloat: p.
-    x_double := x_single asArbitraryPrecisionFloat: 2*p.
+    x_single := someValue asArbitraryPrecisionFloatNumBits: p.
+    x_double := x_single asArbitraryPrecisionFloatNumBits: 2*p.
     f_single := x_single perform: f.
     f_double := x_double perform: f.
-    self assert: (f_double asArbitraryPrecisionFloat: p) = f_single.
+    self assert: (f_double asArbitraryPrecisionFloatNumBits: p) = f_single.
 }}}
 
 But such test is subject to DoubleRoundingProblem and must be handled with care. In case of exact tie, we can for example retry with quadruple precision.
