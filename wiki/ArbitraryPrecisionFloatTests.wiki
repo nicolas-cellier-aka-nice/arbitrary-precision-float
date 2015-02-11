@@ -30,12 +30,12 @@ Another possibility is to use a power serie expansion using exact arithmetic (us
     n := 1.
 
     [term := term * f / n.
-    n := n +1.
+    n := n + 1.
     sum := sum + term.
     term abs * (2 raisedTo: 2*p) > sum]
         whileTrue.
     error := (x exp asFraction - sum) abs.
-    self assert: error < (x ulp / 2)
+    self assert: error < (x exp ulp / 2)
 }}}
 
 In any case, testing that the implementation will allways round correctly whatever x value is another problem. Even with low precision this cannot be achieved because the exponent are unbounded.
