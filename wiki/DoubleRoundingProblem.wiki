@@ -1,0 +1,40 @@
+#summary This page illustrates the double rounding problem.
+
+= Introduction =
+
+One way to enhance accuracy of mathematical functions is to use some extended precision. However one difficulty that arise with floating point is the double rounding problem which is illustrated here.
+
+
+= Details =
+
+Imagine we are implementing function f with 4 bits of accuracy, and for the computations, we use a precision extended to 8 bits.
+
+If the exact value is
+    f = 1.000 | 1000 | 01...
+
+Then the correctly rounded extended precision value will be
+    round8(f) = 1.000 | 1000
+
+Then this value will be rounded again in single precision to
+    round4(round8(f)) = 1.000
+
+But this is not the correctly rounded value of f. Indeed, the truncated part was a bit more than half the unit of least precision (0.001), so the correctly rounded value was
+    round4(f)=1.001
+
+Unluckily, we rounded twice consecutively to lower, while a single rounding operation would have rounded to upper...
+
+This can also occur the other way around, rounding twice upper instead of lower:
+
+|| f                 || 1.001 | 0111 | 10... ||
+|| round8(f)         || 1.001 | 1000         ||
+|| round4(round8(f)) || 1.010                ||
+
+In other words, round4(round8(f)) is different than round4(f). The problem is when the first rounding operation leads to an exact tie.
+
+This problem is known as the _double rounding problem_.
+
+Due to this, without special precautions, simply evaluating a function with an extended precision does not guaranty a correctly rounded result. Technically, we speak of _faithfully rounded_ result.
+
+A faithfully rounded result can be up to 1 ulp off the correctly rounded result.
+
+Note that using more bits in the extended precision will mitigate the risk of encountering an exact tie: it will reduce the probability of occurrence, but not eliminate it.
