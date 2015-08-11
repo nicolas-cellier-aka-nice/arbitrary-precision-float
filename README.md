@@ -1,4 +1,4 @@
-This project was automatically exported from https://code.google.com/p/arbitrary-precision-float 
+This project was automatically exported from code.google.com/p/arbitrary-precision-float 
 
 ArbitraryPrecisionFloat is a new Smalltalk Number subclass that can perform arithmetic operations, and evaluate the principal mathematical functions.
 
@@ -17,3 +17,5 @@ ArbitraryPrecisionFloat has been implemented in [Cincom Visualworks](https://git
 Except for Dolphin, code is not directly hosted on github, but rather in dialect specific source code repositories. Also note that a fork of ArbitraryPrecisionFloat has been integrated in the [SciSmalltalk](https://github.com/SergeStinckwich/SciSmalltalk) project. An effort will be made to sync further developments with this project.
 
 For links to reference work in the domain, and sources of inspiration of this library, please visit InspirationSources.
+
+ArbitraryPrecisionFloat is licensed under MIT. See : http://opensource.org/licenses/MIT
