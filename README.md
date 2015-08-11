@@ -16,6 +16,6 @@ ArbitraryPrecisionFloat has been implemented in [Cincom Visualworks](https://git
 
 Except for Dolphin, code is not directly hosted on github, but rather in dialect specific source code repositories. Also note that a fork of ArbitraryPrecisionFloat has been integrated in the [SciSmalltalk](https://github.com/SergeStinckwich/SciSmalltalk) project. An effort will be made to sync further developments with this project.
 
-For links to reference work in the domain, and sources of inspiration of this library, please visit InspirationSources.
+For links to reference work in the domain, and sources of inspiration of this library, please visit [InspirationSources](https://github.com/nicolas-cellier-aka-nice/arbitrary-precision-float/wiki/InspirationSources).
 
 ArbitraryPrecisionFloat is licensed under MIT. See : http://opensource.org/licenses/MIT
