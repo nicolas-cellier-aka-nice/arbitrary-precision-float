@@ -6,10 +6,10 @@ Computations are performed with inexact arithmetic like other Floating point num
 
 ArbitraryPrecisionFloat is able of mixed arithmetic operations like the other Number subclasses. A conversion to the most accurate inexact number class will occur in this case.
 
-Other requirements are listed [here](wiki/Requirements) and are (or should be) implemented in [ArbitraryPrecisionFloatTests](wiki/ArbitraryPrecisionFloatTests). A quick introduction on how to use the library is explained [here](wiki/UsingArbitraryPrecisionFloat).
+Other requirements are listed [here](https://github.com/nicolas-cellier-aka-nice/arbitrary-precision-float/wiki/Requirements) and are (or should be) implemented in [ArbitraryPrecisionFloatTests](https://github.com/nicolas-cellier-aka-nice/arbitrary-precision-float/wiki/ArbitraryPrecisionFloatTests). A quick introduction on how to use the library is explained [here](https://github.com/nicolas-cellier-aka-nice/arbitrary-precision-float/wiki/UsingArbitraryPrecisionFloat).
 
 ArbitraryPrecisionFloat implementation relies on LargeInteger arithmetic that exists on most Smalltalk dialects. The design and implementation will be detailed in the wiki.
 
-ArbitraryPrecisionFloat has been implemented in [Cincom Visualworks](wiki/ArbitraryPrecisionFloatForVisualWorks), [Squeak/Pharo](wiki/ArbitraryPrecisionFloatForSqueakAndPharo) and [Dolphin](wiki/ArbitraryPrecisionFloatForDolphin) dialects, but port to other dialects shall not be too hard. You can contact the author if help is required for such a port.
+ArbitraryPrecisionFloat has been implemented in [Cincom Visualworks](https://github.com/nicolas-cellier-aka-nice/arbitrary-precision-float/wiki/ArbitraryPrecisionFloatForVisualWorks), [Squeak/Pharo](https://github.com/nicolas-cellier-aka-nice/arbitrary-precision-float/wiki/ArbitraryPrecisionFloatForSqueakAndPharo) and [Dolphin](https://github.com/nicolas-cellier-aka-nice/arbitrary-precision-float/wiki/ArbitraryPrecisionFloatForDolphin) dialects, but port to other dialects shall not be too hard. You can contact the author if help is required for such a port.
 
 For links to reference work in the domain, and sources of inspiration of this library, please visit InspirationSources.
