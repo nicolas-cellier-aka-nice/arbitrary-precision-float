@@ -942,30 +942,37 @@ isZero
 ln
 	"Answer the neperian logarithm of the receiver."
 
-	| x4 one two p res s16 |
+	| x4 one two p res selfHighRes prec e |
 	self <= self zero ifTrue: [self error: 'ln is only defined for x > 0.0'].
-	
+
 	one := self one.
 	self = one ifTrue: [^self zero].
-	self < one ifTrue: [^self reciprocal ln negated].
 	two := one timesTwoPower: 1.
 
 	"Use Salamin algorithm (approximation is good if x is big enough)
 		x ln = Pi  / (2 * (1 agm: 4/x) ).
-	If x not big enough, compute (x timesTwoPower: p) ln - (2 ln * p)"
-	s16 := self asArbitraryPrecisionFloatNumBits: nBits + 16.
-	x4 := (4 asArbitraryPrecisionFloatNumBits: nBits + 16) 
-				inPlaceDivideBy: s16.
-	s16 exponent > (nBits + 16) 
+	If x not big enough, compute (x timesTwoPower: p) ln - (2 ln * p)
+	if x is close to 1, better use a power expansion"
+	prec := nBits + 16.
+	e := self exponent.
+	e < 0 ifTrue: [e := -1 - e].
+	e > prec
 		ifTrue: [p := 0]
-		ifFalse: 
-			[p := nBits + 16 - s16 exponent.
-			x4 inPlaceTimesTwoPower: p negated].
-	res := s16 pi / (one agm: x4) timesTwoPower: -1.
-	^(self = two 
+		ifFalse:
+			[p := prec - e.
+			prec := prec + p highBit].
+	selfHighRes := self asArbitraryPrecisionFloatNumBits: prec.
+	(selfHighRes - one) exponent * -4 >= nBits ifTrue: [^(selfHighRes powerExpansionLnPrecision: prec) asArbitraryPrecisionFloatNumBits: nBits].
+	self < one ifTrue: [selfHighRes inPlaceReciprocal].	"Use ln(1/x) => - ln(x)"
+	x4 := (4 asArbitraryPrecisionFloatNumBits: prec) 
+				inPlaceDivideBy: selfHighRes;
+				inPlaceTimesTwoPower: p negated.
+	res := selfHighRes pi / (one agm: x4) timesTwoPower: -1.
+	res := selfHighRes = two 
 		ifTrue: [res / (p + 1)]
-		ifFalse: [p = 0 ifTrue: [res] ifFalse: [res - ((two asArbitraryPrecisionFloatNumBits: nBits + p highBit + 16) ln * p)]]) 
-			asArbitraryPrecisionFloatNumBits: nBits!
+		ifFalse: [p = 0 ifTrue: [res] ifFalse: [res - ((two asArbitraryPrecisionFloatNumBits: prec) ln * p)]].
+	self < one ifTrue: [res inPlaceNegated].
+	^res asArbitraryPrecisionFloatNumBits: nBits!
 
 mantissa
 	^mantissa!
@@ -1114,6 +1121,17 @@ powerExpansionArcTan: x precision: precBits
 	sum inPlaceAdd: term / count.
 	term exponent + precBits < sum exponent] whileFalse.
 	^sum!
+
+powerExpansionLnPrecision: precBits
+	"Evaluate the neperian logarithm of the receiver by power series expansion.
+	For quadratic convergence, use:
+	ln ((1+y)/(1-y)) = 2 y (1 + y^2/3 + y^4/5 + ... ) = 2 ar tanh( y )
+	(1+y)/(1-y) = self => y = (self-1)/(self+1)
+	This algorithm is interesting when the receiver is close to 1"
+	
+	| one |
+	one := self one.
+	^((self - one)/(self + one) powerExpansionArTanhPrecision: precBits) timesTwoPower: 1!
 
 printOn: aStream
 	^self printOn: aStream base: 10!
@@ -1409,6 +1427,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #pi!arithmetic!public! !
 !ArbitraryPrecisionFloat categoriesFor: #positive!public!testing! !
 !ArbitraryPrecisionFloat categoriesFor: #powerExpansionArcTan:precision:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #powerExpansionLnPrecision:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #printOn:!printing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #printOn:base:!printing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #raisedToInteger:!public! !
