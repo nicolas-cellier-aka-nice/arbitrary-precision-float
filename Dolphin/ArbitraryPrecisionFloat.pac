@@ -976,6 +976,15 @@ mantissa: m exponent: e nBits: n
 	nBits := n.
 	self round!
 
+naiveRaisedToInteger: n
+	"Very naive algorithm: use full precision.
+	Use only for small n"
+	| m e |
+	m := mantissa raisedToInteger: n. 
+	e := biasedExponent * n.
+	^(m asArbitraryPrecisionFloatNumBits: nBits) timesTwoPower: e
+	!
+
 negated
 	^self copy inPlaceNegated!
 
@@ -1128,6 +1137,24 @@ printOn: aStream base: base
 		space;
 		print: nBits;
 		nextPut: $)!
+
+raisedToInteger: anInteger 
+	| bitProbe highPrecisionSelf n result |
+	n := anInteger abs.
+	(n < 5 or: [n * nBits < 512])
+		ifTrue: [^ self naiveRaisedToInteger: anInteger].
+	bitProbe := 1 bitShift: n highBit - 1.
+	highPrecisionSelf := self asArbitraryPrecisionFloatNumBits: n highBit * 2 + nBits + 2.
+	result := highPrecisionSelf one.
+	
+	[(n bitAnd: bitProbe) = 0 ifFalse: [result := result * highPrecisionSelf].
+	(bitProbe := bitProbe bitShift: -1) > 0]
+		whileTrue: [result := result squared].
+		
+	^ (anInteger negative
+		ifTrue: [result reciprocal]
+		ifFalse: [result])
+		asArbitraryPrecisionFloatNumBits: nBits!
 
 reciprocal
 	^self copy inPlaceReciprocal!
@@ -1369,6 +1396,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #ln!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #mantissa!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #mantissa:exponent:nBits:!initialize/release!public! !
+!ArbitraryPrecisionFloat categoriesFor: #naiveRaisedToInteger:!public! !
 !ArbitraryPrecisionFloat categoriesFor: #negated!arithmetic!public! !
 !ArbitraryPrecisionFloat categoriesFor: #negative!public!testing! !
 !ArbitraryPrecisionFloat categoriesFor: #nextToward:!accessing!public! !
@@ -1383,6 +1411,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #powerExpansionArcTan:precision:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #printOn:!printing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #printOn:base:!printing!public! !
+!ArbitraryPrecisionFloat categoriesFor: #raisedToInteger:!public! !
 !ArbitraryPrecisionFloat categoriesFor: #reciprocal!arithmetic!public! !
 !ArbitraryPrecisionFloat categoriesFor: #reduce!private! !
 !ArbitraryPrecisionFloat categoriesFor: #round!private! !

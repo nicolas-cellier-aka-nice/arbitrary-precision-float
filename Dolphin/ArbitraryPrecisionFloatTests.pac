@@ -470,6 +470,20 @@ testPositive
 	self assert: one positive.
 	self deny: minusOne positive.!
 
+testRaisedToNegativeInteger
+	| n |
+	n := 11.
+	1 to: 1<<n-1 do: [:i |
+		self assert: ((i asArbitraryPrecisionFloatNumBits: n) raisedToInteger: -49)
+			= ((i raisedToInteger: -49) asArbitraryPrecisionFloatNumBits: n) ].!
+
+testRaisedToPositiveInteger
+	| n |
+	n := 11.
+	1 to: 1<<n-1 do: [:i |
+		self assert: ((i asArbitraryPrecisionFloatNumBits: n) raisedToInteger: 49)
+			= ((i raisedToInteger: 49) asArbitraryPrecisionFloatNumBits: n) ].!
+
 testReciprocal
 	| b |
 	b := 1 << (Float precision - 1).
@@ -636,6 +650,8 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #testNegative!public!testing-compare! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testPi!public!testing-constants! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testPositive!public!testing-compare! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testRaisedToNegativeInteger!public! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testRaisedToPositiveInteger!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testReciprocal!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testRoundToNearestEven!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testRoundToNearestEvenAgainstIEEEDouble!public!testing-arithmetic! !
