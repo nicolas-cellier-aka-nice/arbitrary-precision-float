@@ -1360,7 +1360,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceMultiplyBy:andAccumulate:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceMultiplyNoRoundBy:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceNegated!private! !
-!ArbitraryPrecisionFloat categoriesFor: #inPlaceReciprocal!public! !
+!ArbitraryPrecisionFloat categoriesFor: #inPlaceReciprocal!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceSqrt!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceSubtract:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceSubtractNoRound:!private! !

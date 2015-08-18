@@ -274,6 +274,24 @@ testCos
 testCosh
 	self checkDoublePrecisionSerie: self hyperbolicSerie forFunction: #cosh!
 
+testDivide
+	| serie |
+	serie := #(1 2 3 5 6 7 9 10 11 12 19 243) , (Array
+		with: (10 raisedTo: Float precision + 1)
+		with: Float precision factorial
+		with: Float pi).
+	serie do: [:num |
+		| nf na |
+		nf := num asFloat.
+		na := num asArbitraryPrecisionFloatNumBits: Float precision.
+		serie do:[:den |
+			| df da ff fa |
+			df := den asFloat.
+			da := den asArbitraryPrecisionFloatNumBits: Float precision.
+			ff := nf / df.
+			fa := na / da.
+			self assert: ff = fa]].!
+
 testEqual
 	self assert: zero = zero.
 	self deny: zero = one.
@@ -601,6 +619,7 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #testCoercingSum!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testCos!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testCosh!public!testing-hyperbolic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testDivide!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testEqual!public!testing-compare! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testExp!public!testing-functions! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testExpLn!public!testing-functions! !
