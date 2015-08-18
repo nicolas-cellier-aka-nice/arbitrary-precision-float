@@ -15,8 +15,8 @@ package globalAliases: (Set new
 	yourself).
 
 package setPrerequisites: (IdentitySet new
-	add: '..\..\Documents and Settings\cellier\Mes documents\Dolphin Smalltalk X6\Object Arts\Dolphin\Base\Dolphin';
-	add: '..\..\Documents and Settings\cellier\Mes documents\Dolphin Smalltalk X6\Camp Smalltalk\SUnit\SUnit';
+	add: 'Object Arts\Dolphin\Base\Dolphin';
+	add: 'Camp Smalltalk\SUnit\SUnit';
 	yourself).
 
 package!
@@ -452,6 +452,16 @@ testPositive
 	self assert: one positive.
 	self deny: minusOne positive.!
 
+testReciprocal
+	| b |
+	b := 1 << (Float precision - 1).
+	1 to: 10000 do: [:i |
+		| a |
+		a := i asArbitraryPrecisionFloatNumBits: Float precision.
+		self assert: a reciprocal = i asFloat reciprocal.
+		self assert: (a+b) reciprocal = (i+b) asFloat reciprocal.
+		self assert: a negated reciprocal = i asFloat negated reciprocal.]!
+
 testRoundToNearestEven
 	"Check that IEEE default rounding mode is honoured,
 	that is rounding to nearest even"
@@ -607,6 +617,7 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #testNegative!public!testing-compare! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testPi!public!testing-constants! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testPositive!public!testing-compare! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testReciprocal!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testRoundToNearestEven!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testRoundToNearestEvenAgainstIEEEDouble!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testSin!public!testing-trigonometry! !
