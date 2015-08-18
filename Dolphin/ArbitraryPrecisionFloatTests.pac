@@ -45,24 +45,68 @@ ArbitraryPrecisionFloatTest comment: 'Test to check FloatingPoint numbers with a
 !ArbitraryPrecisionFloatTest categoriesForClass!Unclassified! !
 !ArbitraryPrecisionFloatTest methodsFor!
 
+checkDoublePrecision: y forFunction: func nBits: n
+	"Check that doubling the precision, then rounding would lead to the same result"
+	
+	| anArbitraryPrecisionFloat singlePrecisionResult |
+	anArbitraryPrecisionFloat := y asArbitraryPrecisionFloatNumBits: n.
+	singlePrecisionResult := anArbitraryPrecisionFloat perform: func.
+	self checkThatEvaluatingFunction: func toDoublePrecisionOf: anArbitraryPrecisionFloat equals: singlePrecisionResult.
+	^singlePrecisionResult!
+
 checkDoublePrecisionSerie: serie forFunction: func 
-	serie do: [:y |
-		| arb dbl farb fdbl |
-		arb := y asArbitraryPrecisionFloatNumBits: Float precision.
-		dbl := arb asArbitraryPrecisionFloatNumBits: Float precision * 2.
-		farb := arb perform: func.
-		fdbl := (dbl perform: func) asArbitraryPrecisionFloatNumBits: Float precision.
-		self assert: (fdbl - farb) isZero]!
+	^self checkDoublePrecisionSerie: serie forFunction: func nBits: Float precision!
+
+checkDoublePrecisionSerie: serie forFunction: func nBits: n
+	serie do: [:y | self checkDoublePrecision: y forFunction: func nBits: n]!
 
 checkDoublePrecisionSerieVsFloat: serie forFunction: func 
 	^serie reject: [:y |
-		| arb dbl farb fdbl |
-		arb := y asArbitraryPrecisionFloatNumBits: Float precision.
-		dbl := arb asArbitraryPrecisionFloatNumBits: Float precision * 2.
-		farb := arb perform: func.
-		fdbl := (dbl perform: func) asArbitraryPrecisionFloatNumBits: Float precision.
-		self assert: (fdbl - farb) isZero.
+		| farb |
+		farb := self checkDoublePrecision: y forFunction: func nBits: Float precision.
 		[(y asFloat perform: func) = farb] on: ZeroDivide do: [false]]!
+
+checkThatEvaluatingFunction: func toDoublePrecisionOf: anArbitraryPrecisionFloat equals: singlePrecisionResult
+	"Check that doubling the precision, then rounding would lead to the same result"
+	
+	| n doublePrecision doublePrecisionResult lowBits |
+	n := anArbitraryPrecisionFloat numBits.
+	doublePrecision := anArbitraryPrecisionFloat asArbitraryPrecisionFloatNumBits: n * 2.
+	doublePrecisionResult := doublePrecision perform: func.
+	
+	"Note: the test must be guarded against double rounding error condition.
+	For example, suppose the single precision is 4 bits, double precision 8 bits.
+	If exact result is 1.001 | 0111 | 1001...
+	Then the nearest double is rounded to upper 1.001 | 1000
+	Then the nearest single to the double is rounded to upper 1.010
+	But the nearest single to the exact result should have been 1.001
+	To avoid this, we have to check if the second rounding is an exact tie"
+	doublePrecisionResult normalize.
+	lowBits := doublePrecisionResult mantissa bitAnd: 1<<n-1.
+	lowBits = (1<<(n-1))
+		ifTrue:
+			["double precision is ambiguous - retry with quadruple..."
+			^self checkThatEvaluatingFunction: func toQuadruplePrecisionOf: anArbitraryPrecisionFloat equals: singlePrecisionResult].
+	self assert: ((doublePrecisionResult asArbitraryPrecisionFloatNumBits: n)- singlePrecisionResult) isZero
+	
+!
+
+checkThatEvaluatingFunction: func toQuadruplePrecisionOf: anArbitraryPrecisionFloat equals: singlePrecisionResult
+	"Check that quadrupling the precision, then rounding would lead to the same result"
+	
+	| n quadruplePrecision quadruplePrecisionResult lowBits |
+	n := anArbitraryPrecisionFloat numBits.
+	quadruplePrecision := anArbitraryPrecisionFloat asArbitraryPrecisionFloatNumBits: n * 4.
+	quadruplePrecisionResult := quadruplePrecision perform: func.
+	
+	"Guard against double rounding error condition (exact tie)"
+	quadruplePrecisionResult normalize.
+	lowBits := quadruplePrecisionResult mantissa bitAnd: 1<<(3*n)-1.
+	lowBits = (1<<(3*n-1))
+		ifTrue:
+			["quadruple precision is ambiguous - give up..."
+			^self].
+	self assert: ((quadruplePrecisionResult asArbitraryPrecisionFloatNumBits: n)- singlePrecisionResult) isZero.!
 
 hyperbolicSerie
 	^#(-3.0e0  -0.1e0  0.0e0  1.0e-20  1.0e-10  0.99e0 1.0e0  2.5e0  3.0e0  10.25e0) , (Array with: (3/10) asFloat with: (22/7) asFloat)!
@@ -608,8 +652,12 @@ testZeroOne
 
 trigonometricSerie
 	^((-720 to: 720) collect: [:i | i asFloat degreesToRadians])! !
+!ArbitraryPrecisionFloatTest categoriesFor: #checkDoublePrecision:forFunction:nBits:!private! !
 !ArbitraryPrecisionFloatTest categoriesFor: #checkDoublePrecisionSerie:forFunction:!private! !
+!ArbitraryPrecisionFloatTest categoriesFor: #checkDoublePrecisionSerie:forFunction:nBits:!private! !
 !ArbitraryPrecisionFloatTest categoriesFor: #checkDoublePrecisionSerieVsFloat:forFunction:!private! !
+!ArbitraryPrecisionFloatTest categoriesFor: #checkThatEvaluatingFunction:toDoublePrecisionOf:equals:!private! !
+!ArbitraryPrecisionFloatTest categoriesFor: #checkThatEvaluatingFunction:toQuadruplePrecisionOf:equals:!private! !
 !ArbitraryPrecisionFloatTest categoriesFor: #hyperbolicSerie!private!testing-hyperbolic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #inverseTrigonometricSerie!private!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #largeTrigonometricSerie!private!testing-trigonometry! !
