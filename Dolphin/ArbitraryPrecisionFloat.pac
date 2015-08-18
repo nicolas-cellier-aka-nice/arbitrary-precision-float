@@ -661,7 +661,7 @@ cosh
 
 digitCompare: b 
 	"both are positive or negative.
-	answer +1 if i am greater, -1 if i am smaller, 0 if equal"
+	answer +1 if i am of greater magnitude, -1 if i am of smaller magnitude, 0 if equal magnitude"
 	
 	| compare |
 	self isZero
@@ -670,9 +670,9 @@ digitCompare: b
 				ifFalse: [^ -1]].
 	b isZero
 		ifTrue: [^ 1].
-	compare := (self numBitsInMantissa + biasedExponent - b numBitsInMantissa - b biasedExponent) sign.
+	compare := (self exponent - b exponent) sign.
 	^ compare = 0
-		ifTrue: [(self - b) sign]
+		ifTrue: [(self abs - b abs) sign]
 		ifFalse: [compare]!
 
 exp
