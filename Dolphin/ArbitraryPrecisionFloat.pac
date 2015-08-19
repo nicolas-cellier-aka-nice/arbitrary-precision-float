@@ -442,7 +442,7 @@ arcCos
 
 	| arcCos x one |
 	self isZero ifTrue: [^(self pi timesTwoPower: -1)].
-	x := self asArbitraryPrecisionFloatNumBits: 8 + nBits.
+	x := self asArbitraryPrecisionFloatNumBits: 16 + nBits.
 	x inPlaceAbs.
 	one := x one.
 	x > one ifTrue: [self error: 'cannot compute arcCos of a number greater than 1'].
@@ -456,16 +456,18 @@ arCosh
 	"Evaluate the area hyperbolic cosine of the receiver."
 
 	| arCosh x one y two |
-	x := self asArbitraryPrecisionFloatNumBits: 6 + nBits.
+	x := self asArbitraryPrecisionFloatNumBits: 16 + nBits.
 	one := x one.
 	x < one ifTrue: [self error: 'cannot compute arCosh of a number less than 1'].
 	x = one ifTrue: [^self zero].
 	y := x - one.
 	y < one
 		ifTrue:
-			[y := y asArbitraryPrecisionFloatNumBits: 6 + nBits + (y exponent negated).
-			two := one timesTwoPower: 1.
-			arCosh := ((y * (y + two)) sqrt + y + one) ln]
+			[y exponent * -4 >= nBits
+				ifTrue: [arCosh := (y powerExpansionArCoshp1Precision: y numBits) * (y timesTwoPower: 1) sqrt]
+				ifFalse:
+					[two := one timesTwoPower: 1.
+					arCosh := ((y * (y + two)) sqrt + y + one) ln]]
 		ifFalse: [arCosh := ((x squared - one) sqrt + x) ln].
 	^arCosh asArbitraryPrecisionFloatNumBits: nBits!
 
@@ -474,13 +476,15 @@ arcSin
 
 	| arcSin x one |
 	self isZero ifTrue: [^self].
-	x := self asArbitraryPrecisionFloatNumBits: 6 + nBits.
+	x := self asArbitraryPrecisionFloatNumBits: 16 + nBits.
 	x inPlaceAbs.
 	one := x one.
 	x > one ifTrue: [self error: 'cannot compute arcSin of a number greater than 1'].
 	arcSin := x = one
 		ifTrue: [self pi timesTwoPower: -1]
-		ifFalse: [(x / (one - x squared) sqrt) arcTan].
+		ifFalse: [self exponent * -4 >= nBits
+			ifTrue: [x powerExpansionArcSinPrecision: x numBits]
+			ifFalse: [(x / (one - x squared) sqrt) arcTan]].
 	self negative ifTrue: [arcSin inPlaceNegated].
 	^arcSin asArbitraryPrecisionFloatNumBits: nBits!
 
@@ -491,16 +495,16 @@ arcTan
 	self isZero ifTrue: [^self].
 	self > 1
 		ifTrue:
-			[x := self asArbitraryPrecisionFloatNumBits: 6 + nBits.
+			[x := self asArbitraryPrecisionFloatNumBits: nBits * 2 + 2.
 			x inPlaceAbs.
 			arcTan := (x pi timesTwoPower: -1) - x reciprocal arcTan]
 		ifFalse:
-			[power := ((nBits bitShift: -1) + self exponent max: 0) highBit.
+			[power := ((nBits bitShift: -1) + self exponent max: 4) highBit.
 			x := self asArbitraryPrecisionFloatNumBits: nBits + (1 bitShift: 1 + power).
 			x inPlaceAbs.
 			one := x one.
 			power timesRepeat: [x := x / (one + (one + x squared) sqrt)].
-			arcTan := self powerExpansionArcTan: x precision: x numBits + 6.
+			arcTan := x powerExpansionArcTanPrecision: x numBits + 6.
 			arcTan inPlaceTimesTwoPower: power].
 	self negative ifTrue: [arcTan inPlaceNegated].
 	^arcTan asArbitraryPrecisionFloatNumBits: nBits!
@@ -529,30 +533,35 @@ arcTan: denominator
 						ifFalse: [ arcTan - arcTan pi ]]) asArbitraryPrecisionFloatNumBits: precision]]!
 
 arSinh
-	"Evaluate the area hyperbolic cosine of the receiver."
+	"Evaluate the area hyperbolic sine of the receiver."
 
 	| arSinh x one |
 	self isZero ifTrue: [^self].
 	self exponent negated > nBits ifTrue: [^self].
-	x := self asArbitraryPrecisionFloatNumBits: 6 + nBits + (0 max: self exponent negated).
+	x := self asArbitraryPrecisionFloatNumBits: 16 + nBits.
 	x inPlaceAbs.
-	one := x one.
-	arSinh := ((x squared + one) sqrt + x) ln.
+	self exponent * -4 >= nBits
+		ifTrue: [arSinh := x powerExpansionArSinhPrecision: x numBits]
+		ifFalse:
+			[one := x one.
+			arSinh := ((x squared + one) sqrt + x) ln].
 	self negative ifTrue: [arSinh inPlaceNegated].
 	^arSinh asArbitraryPrecisionFloatNumBits: nBits!
 
 arTanh
-	"Evaluate the area hyperbolic cosine of the receiver."
+	"Evaluate the area hyperbolic tangent of the receiver."
 
 	| arTanh x one |
 	self isZero ifTrue: [^self].
-	self exponent negated > nBits ifTrue: [^self].
-	x := self asArbitraryPrecisionFloatNumBits: 12 + nBits + (0 max: self exponent negated).
+	x := self asArbitraryPrecisionFloatNumBits: 16 + nBits.
 	x inPlaceAbs.
 	one := x one.
 	x >= one ifTrue: [self error: 'cannot evaluate arTanh of number of magnitude >= 1'].
-	arTanh := ((one + x) / (one - x)) ln.
-	arTanh inPlaceTimesTwoPower: -1.
+	self exponent * -4 >= nBits
+		ifTrue: [arTanh := x powerExpansionArTanhPrecision: x numBits]
+		ifFalse:
+			[arTanh := ((one + x) / (one - x)) ln.
+			arTanh inPlaceTimesTwoPower: -1].
 	self negative ifTrue: [arTanh inPlaceNegated].
 	^arTanh asArbitraryPrecisionFloatNumBits: nBits!
 
@@ -652,7 +661,9 @@ cosh
 	| e x |
 	self isZero ifTrue: [^self one].
 	self exponent negated > nBits ifTrue: [^self one].
-	x := self asArbitraryPrecisionFloatNumBits: nBits + 6.
+	x := self asArbitraryPrecisionFloatNumBits: nBits + 16.
+	self exponent * -4 >= nBits
+		ifTrue: [^(x powerExpansionCoshPrecision: x numBits) asArbitraryPrecisionFloatNumBits: nBits].
 	e := x exp.
 	^e
 		inPlaceAdd: e reciprocal;
@@ -983,6 +994,25 @@ mantissa: m exponent: e nBits: n
 	nBits := n.
 	self round!
 
+moduloNegPiToPi
+	"answer a copy of the receiver modulo 2*pi, with doubled precision"
+
+	| x pi twoPi quo |
+	x := (self asArbitraryPrecisionFloatNumBits: nBits * 2).
+	self negative ifTrue: [x inPlaceNegated].
+	pi := x pi.
+	twoPi := pi timesTwoPower: 1.
+	x > pi ifTrue:
+		[quo := x + pi quo: twoPi.
+		quo highBitOfMagnitude > nBits ifTrue:
+			[x := (self abs asArbitraryPrecisionFloatNumBits: nBits + quo highBitOfMagnitude).
+			pi := x pi.
+			twoPi := pi timesTwoPower: 1.
+			quo := x + pi quo: twoPi].
+		x inPlaceSubtract: twoPi * quo.
+		self negative ifTrue: [x inPlaceNegated]].
+	^x asArbitraryPrecisionFloatNumBits: nBits * 2!
+
 naiveRaisedToInteger: n
 	"Very naive algorithm: use full precision.
 	Use only for small n"
@@ -1103,6 +1133,54 @@ pi
 positive
 	^mantissa positive!
 
+powerExpansionArCoshp1Precision: precBits
+	"Evaluate arcosh(x+1)/sqrt(2*x) for the receiver x by power series expansion.
+	The algorithm is interesting when the receiver is close to zero"
+	
+	| one two count count2 sum term term1 term2 |
+	one := self one.
+	two := one timesTwoPower: 1.
+	count := one copy.
+	count2 := one copy.
+	sum := one copy.
+	term1 := one copy.
+	term2 := one copy.
+	
+	[term1 inPlaceMultiplyBy: self.
+	term1 inPlaceNegated.
+	term2 inPlaceMultiplyBy: count2.
+	term2 inPlaceMultiplyBy: count2.
+	term2 inPlaceDivideBy: count.
+	count inPlaceAdd: one.
+	count2 inPlaceAdd: two.
+	term2 inPlaceDivideBy: count2.
+	term2 inPlaceTimesTwoPower: -2.
+	term := term1 * term2.
+	sum inPlaceAdd: term.
+	term exponent + precBits < sum exponent] whileFalse.
+	^sum!
+
+powerExpansionArcSinPrecision: precBits
+	"Evaluate the arc sine of the receiver by power series expansion.
+	The algorithm is interesting when the receiver is close to zero"
+	
+	| one x2 two count sum term |
+	one := self one.
+	two := one timesTwoPower: 1.
+	count := one copy.
+	sum := one copy.
+	term := one copy.
+	x2 := self squared.
+	
+	[term inPlaceMultiplyBy: x2.
+	term inPlaceMultiplyBy: count.
+	term inPlaceDivideBy: count + one.
+	count inPlaceAdd: two.
+	sum inPlaceAdd: term / count.
+	term exponent + precBits < sum exponent] whileFalse.
+	sum inPlaceMultiplyBy: self.
+	^sum!
+
 powerExpansionArcTan: x precision: precBits
 	"Evaluate the arc tangent of x by power series expansion."
 	
@@ -1120,6 +1198,49 @@ powerExpansionArcTan: x precision: precBits
 	count inPlaceAdd: two.
 	sum inPlaceAdd: term / count.
 	term exponent + precBits < sum exponent] whileFalse.
+	^sum!
+
+powerExpansionArcTanPrecision: precBits
+	"Evaluate the arc tangent of the receiver by power series expansion.
+	arcTan (x) = x (1 - x^2/3 + x^4/5 - ... ) for -1 < x < 1
+	The algorithm is interesting when the receiver is close to zero"
+	
+	| count one sum term two x2 |
+	one := self one.
+	two := one timesTwoPower: 1.
+	count := one copy.
+	sum := one copy.
+	term := one copy.
+	x2 := self squared.
+	
+	[term inPlaceMultiplyBy: x2.
+	term inPlaceNegated.
+	count inPlaceAdd: two.
+	sum inPlaceAdd: term / count.
+	term exponent + precBits < sum exponent] whileFalse.
+	sum inPlaceMultiplyBy: self.
+	^sum!
+
+powerExpansionArSinhPrecision: precBits
+	"Evaluate the area hypebolic sine of the receiver by power series expansion.
+	The algorithm is interesting when the receiver is close to zero"
+	
+	| one x2 two count sum term |
+	one := self one.
+	two := one timesTwoPower: 1.
+	count := one copy.
+	sum := one copy.
+	term := one copy.
+	x2 := self squared.
+	
+	[term inPlaceMultiplyBy: x2.
+	term inPlaceMultiplyBy: count.
+	term inPlaceDivideBy: count + one.
+	term inPlaceNegated.
+	count inPlaceAdd: two.
+	sum inPlaceAdd: term / count.
+	term exponent + precBits < sum exponent] whileFalse.
+	sum inPlaceMultiplyBy: self.
 	^sum!
 
 powerExpansionArTanhPrecision: precBits
@@ -1142,6 +1263,45 @@ powerExpansionArTanhPrecision: precBits
 	sum inPlaceMultiplyBy: self.
 	^sum!
 
+powerExpansionCoshPrecision: precBits
+	"Evaluate the hyperbolic cosine of the receiver by power series expansion.
+	The algorithm is interesting when the receiver is close to zero"
+	
+	| count one sum term two x2 |
+	one := self one.
+	two := one timesTwoPower: 1.
+	count := one copy.
+	sum := one copy.
+	term := one copy.
+	x2 := self squared.
+	
+	[term inPlaceMultiplyBy: x2.
+	term inPlaceDivideBy: count * (count + one).
+	count inPlaceAdd: two.
+	sum inPlaceAdd: term.
+	term exponent + precBits < sum exponent] whileFalse.
+	^sum!
+
+powerExpansionCosPrecision: precBits
+	"Evaluate the cosine of the receiver by power series expansion.
+	The algorithm is interesting when the receiver is close to zero"
+	
+	| count one sum term two x2 |
+	one := self one.
+	two := one timesTwoPower: 1.
+	count := one copy.
+	sum := one copy.
+	term := one copy.
+	x2 := self squared.
+	
+	[term inPlaceMultiplyBy: x2.
+	term inPlaceDivideBy: count * (count + one).
+	term inPlaceNegated.
+	count inPlaceAdd: two.
+	sum inPlaceAdd: term.
+	term exponent + precBits < sum exponent] whileFalse.
+	^sum!
+
 powerExpansionLnPrecision: precBits
 	"Evaluate the neperian logarithm of the receiver by power series expansion.
 	For quadratic convergence, use:
@@ -1152,6 +1312,127 @@ powerExpansionLnPrecision: precBits
 	| one |
 	one := self one.
 	^((self - one)/(self + one) powerExpansionArTanhPrecision: precBits) timesTwoPower: 1!
+
+powerExpansionSinCosPrecision: precBits
+	"Evaluate the sine and cosine of the receiver by power series expansion.
+	The algorithm is interesting when the receiver is close to zero"
+	
+	| count one sin cos term |
+	one := self one.
+	count := one copy.
+	cos := one copy.
+	sin := self copy.
+	term := self copy.
+	
+	[count inPlaceAdd: one.
+	term
+		inPlaceMultiplyBy: self;
+		inPlaceDivideBy: count;
+		inPlaceNegated.
+	cos inPlaceAdd: term.
+
+	count inPlaceAdd: one.
+	term
+		inPlaceMultiplyBy: self;
+		inPlaceDivideBy: count.
+	sin inPlaceAdd: term.
+	
+	term exponent + precBits < sin exponent] whileFalse.
+	^Array with: sin with: cos!
+
+powerExpansionSinhPrecision: precBits
+	"Evaluate the hyperbolic sine of the receiver by power series expansion.
+	The algorithm is interesting when the receiver is close to zero"
+	
+	| count one sum term two x2 |
+	one := self one.
+	two := one timesTwoPower: 1.
+	count := two copy.
+	sum := self copy.
+	term := self copy.
+	x2 := self squared.
+	
+	[term inPlaceMultiplyBy: x2.
+	term inPlaceDivideBy: count * (count + one).
+	count inPlaceAdd: two.
+	sum inPlaceAdd: term.
+	term exponent + precBits < sum exponent] whileFalse.
+	^sum!
+
+powerExpansionSinPrecision: precBits
+	"Evaluate the sine of the receiver by power series expansion.
+	The algorithm is interesting when the receiver is close to zero"
+	
+	| count one sum term two x2 |
+	one := self one.
+	two := one timesTwoPower: 1.
+	count := two copy.
+	sum := self copy.
+	term := self copy.
+	x2 := self squared.
+	
+	[term inPlaceMultiplyBy: x2.
+	term inPlaceDivideBy: count * (count + one).
+	term inPlaceNegated.
+	count inPlaceAdd: two.
+	sum inPlaceAdd: term.
+	term exponent + precBits < sum exponent] whileFalse.
+	^sum!
+
+powerExpansionTanhPrecision: precBits
+	"Evaluate the hyperbolic tangent of the receiver by power series expansion.
+	The algorithm is interesting when the receiver is close to zero"
+	
+	| count one sum term pow two x2 seidel |
+	one := self one.
+	two := one timesTwoPower: 1.
+	count := two copy.
+	sum := one copy.
+	pow := one copy.
+	x2 := self squared.
+	seidel := OrderedCollection new: 256.
+	seidel add: 1.
+	
+	[pow inPlaceMultiplyBy: x2.
+	pow inPlaceDivideBy: count * (count + one).
+	pow inPlaceNegated.
+	count inPlaceAdd: two.
+	2 to: seidel size do: [:i | seidel at: i put: (seidel at: i-1) + (seidel at: i)].
+	seidel addLast: seidel last.
+	seidel size to: 2 by: -1 do: [:i | seidel at: i - 1 put: (seidel at: i-1) + (seidel at: i)].
+	seidel addFirst: seidel first.
+	term := pow * seidel first.
+	sum inPlaceAdd: term.
+	term exponent + precBits < sum exponent] whileFalse.
+	sum inPlaceMultiplyBy: self.
+	^sum!
+
+powerExpansionTanPrecision: precBits
+	"Evaluate the tangent of the receiver by power series expansion.
+	The algorithm is interesting when the receiver is close to zero"
+	
+	| count one sum term pow two x2 seidel |
+	one := self one.
+	two := one timesTwoPower: 1.
+	count := two copy.
+	sum := one copy.
+	pow := one copy.
+	x2 := self squared.
+	seidel := OrderedCollection new: 256.
+	seidel add: 1.
+	
+	[pow inPlaceMultiplyBy: x2.
+	pow inPlaceDivideBy: count * (count + one).
+	count inPlaceAdd: two.
+	2 to: seidel size do: [:i | seidel at: i put: (seidel at: i-1) + (seidel at: i)].
+	seidel addLast: seidel last.
+	seidel size to: 2 by: -1 do: [:i | seidel at: i - 1 put: (seidel at: i-1) + (seidel at: i)].
+	seidel addFirst: seidel first.
+	term := pow * seidel first.
+	sum inPlaceAdd: term.
+	term exponent + precBits < sum exponent] whileFalse.
+	sum inPlaceMultiplyBy: self.
+	^sum!
 
 printOn: aStream
 	^self printOn: aStream base: 10!
@@ -1268,7 +1549,9 @@ sinh
 	| e x |
 	self isZero ifTrue: [^self].
 	self exponent negated > nBits ifTrue: [^self].
-	x := self asArbitraryPrecisionFloatNumBits: nBits + 6 + (0 max: self exponent negated).
+	x := self asArbitraryPrecisionFloatNumBits: nBits + 16.
+	self exponent * -4 >= nBits
+		ifTrue: [^(x powerExpansionSinhPrecision: x numBits) asArbitraryPrecisionFloatNumBits: nBits].
 	e := x exp.
 	^e
 		inPlaceSubtract: e reciprocal;
@@ -1347,7 +1630,9 @@ tanh
 	| e x ep one |
 	self isZero ifTrue: [^self].
 	self exponent negated > nBits ifTrue: [^self].
-	x := self asArbitraryPrecisionFloatNumBits: nBits + 6 + (0 max: self exponent negated).
+	x := self asArbitraryPrecisionFloatNumBits: nBits + 16.
+	self exponent * -4 >= nBits
+		ifTrue: [^(x powerExpansionTanhPrecision: x numBits) asArbitraryPrecisionFloatNumBits: nBits].
 	e := x exp.
 	one :=x one.
 	e inPlaceMultiplyBy: e.
@@ -1434,6 +1719,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #ln!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #mantissa!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #mantissa:exponent:nBits:!initialize/release!public! !
+!ArbitraryPrecisionFloat categoriesFor: #moduloNegPiToPi!public! !
 !ArbitraryPrecisionFloat categoriesFor: #naiveRaisedToInteger:!public! !
 !ArbitraryPrecisionFloat categoriesFor: #negated!arithmetic!public! !
 !ArbitraryPrecisionFloat categoriesFor: #negative!public!testing! !
@@ -1446,9 +1732,20 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #one!arithmetic!public! !
 !ArbitraryPrecisionFloat categoriesFor: #pi!arithmetic!public! !
 !ArbitraryPrecisionFloat categoriesFor: #positive!public!testing! !
+!ArbitraryPrecisionFloat categoriesFor: #powerExpansionArCoshp1Precision:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #powerExpansionArcSinPrecision:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #powerExpansionArcTan:precision:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #powerExpansionArcTanPrecision:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #powerExpansionArSinhPrecision:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #powerExpansionArTanhPrecision:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #powerExpansionCoshPrecision:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #powerExpansionCosPrecision:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #powerExpansionLnPrecision:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #powerExpansionSinCosPrecision:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #powerExpansionSinhPrecision:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #powerExpansionSinPrecision:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #powerExpansionTanhPrecision:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #powerExpansionTanPrecision:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #printOn:!printing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #printOn:base:!printing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #raisedToInteger:!public! !
@@ -1516,7 +1813,7 @@ cos: x
 	x isZero ifTrue: [^x one].
 	power := ((nBits bitShift: -1) + x exponent max: 0) highBit.
 	fraction := x timesTwoPower: power negated.
-	cos := self powerExpansionCos: fraction precision: nBits + (1 bitShift: 1 + power).
+	cos := fraction powerExpansionCosPrecision: nBits + (1 bitShift: 1 + power).
 	one := x one.
 	power timesRepeat:
 		["Evaluate cos(2x)=2 cos(x)^2-1"
@@ -1530,7 +1827,7 @@ moduloNegPiToPi
 	x := (ArbitraryPrecisionFloat
 		mantissa: mantissa abs
 		exponent: biasedExponent
-		nBits: nBits * 2 + 2).
+		nBits: nBits * 2 + 16).
 	pi := x pi.
 	twoPi := pi timesTwoPower: 1.
 	x > pi ifTrue:
@@ -1539,79 +1836,21 @@ moduloNegPiToPi
 			[x := (ArbitraryPrecisionFloat
 				mantissa: mantissa abs
 				exponent: biasedExponent
-				nBits: nBits * 3 // 2 + quo highBit + 2).
+				nBits: nBits * 3 // 2 + quo highBit + 16).
 			pi := x pi.
 			twoPi := pi timesTwoPower: 1.
 			quo := x + pi quo: twoPi].
 		x inPlaceSubtract: twoPi * quo].
 	self negative ifTrue: [x inPlaceNegated].
-	^x asArbitraryPrecisionFloatNumBits: nBits * 2!
+	^x asArbitraryPrecisionFloatNumBits: nBits * 2 + 16!
 
-powerExpansionCos: x precision: precBits
-	"Evaluate the cosine of x by power series expansion."
-	
-	| count one sum term two x2 |
-	x isZero ifTrue: [^x one].
-	one := x one.
-	two := one timesTwoPower: 1.
-	count := one copy.
-	sum := one copy.
-	term := one copy.
-	x2 := x squared.
-	
-	[term inPlaceMultiplyBy: x2.
-	term inPlaceDivideBy: count * (count + one).
-	term inPlaceNegated.
-	count inPlaceAdd: two.
-	sum inPlaceAdd: term.
-	term exponent + precBits < sum exponent] whileFalse.
-	^sum!
+pi
+	"Answer an approximation of pi with doubled precision."
 
-powerExpansionSin: x precision: precBits
-	"Evaluate the sine of x by power series expansion."
-	
-	| count one sum term two x2 |
-	x isZero ifTrue: [^x].
-	one := x one.
-	two := one timesTwoPower: 1.
-	count := two copy.
-	sum := x copy.
-	term := x copy.
-	x2 := x squared.
-	
-	[term inPlaceMultiplyBy: x2.
-	term inPlaceDivideBy: count * (count + one).
-	term inPlaceNegated.
-	count inPlaceAdd: two.
-	sum inPlaceAdd: term.
-	term exponent + precBits < sum exponent] whileFalse.
-	^sum!
-
-powerExpansionSinCos: x precision: precBits
-	"Evaluate the sine and cosine of x by power series expansion."
-	
-	| count one sin cos term |
-	one := x one.
-	count := one copy.
-	cos := one copy.
-	sin := x copy.
-	term := x copy.
-	
-	[count inPlaceAdd: one.
-	term
-		inPlaceMultiplyBy: x;
-		inPlaceDivideBy: count;
-		inPlaceNegated.
-	cos inPlaceAdd: term.
-
-	count inPlaceAdd: one.
-	term
-		inPlaceMultiplyBy: x;
-		inPlaceDivideBy: count.
-	sin inPlaceAdd: term.
-	
-	term exponent + precBits < sin exponent] whileFalse.
-	^Array with: sin with: cos!
+	^pi ifNil: [ pi := (ArbitraryPrecisionFloat
+		mantissa: 0
+		exponent: 0
+		nBits: nBits * 2 + 2) pi ]!
 
 sin
 	"Evaluate the sine of the receiver"
@@ -1638,7 +1877,7 @@ sin: x
 	x isZero ifTrue: [^x zero].
 	five := 5 asArbitraryPrecisionFloatNumBits: x numBits.
 	fifth := x / five.
-	sin := self powerExpansionSin: fifth precision: nBits + 8.
+	sin := fifth powerExpansionSinPrecision: nBits + 8.
 	sin2 := sin squared.
 	sin2 inPlaceTimesTwoPower: 2.
 	sin4 := sin2 squared.
@@ -1677,7 +1916,7 @@ sincos: x
 	x isZero ifTrue: [^Array with: x zero with: x one].
 	power := ((nBits bitShift: -1) + x exponent max: 0) highBit.
 	fraction := x timesTwoPower: power negated.
-	sincos := self powerExpansionSinCos: fraction precision: nBits + (1 bitShift: 1 + power).
+	sincos := fraction powerExpansionSinCosPrecision: nBits + (1 bitShift: 1 + power).
 	sin := sincos first.
 	cos := sincos last.
 	one := x one.
@@ -1691,31 +1930,33 @@ sincos: x
 tan
 	"Evaluate the tangent of the receiver"
 
-	| halfPi quarterPi x sincos sinneg cosneg |
-	nBits := nBits + 6.
+	| halfPi quarterPi x sincos neg tan |
 	x := self moduloNegPiToPi.
-	sinneg := x negative.
+	neg := x negative.
 	x inPlaceAbs.
 	halfPi := pi timesTwoPower: -1.
-	(cosneg := x > halfPi) ifTrue: [x inPlaceSubtract: pi; inPlaceNegated].
-	quarterPi := halfPi timesTwoPower: -1.
-	x > quarterPi
+	(x > halfPi)
 		ifTrue:
-			[x inPlaceSubtract: halfPi; inPlaceNegated.
-			sincos := (self sincos: x) reverse]
+			[x inPlaceSubtract: pi; inPlaceNegated.
+			neg := neg not].
+	x exponent * -4 >= nBits
+		ifTrue: [tan := x powerExpansionTanPrecision: x numBits]
 		ifFalse:
-			[sincos := self sincos: x].
-	nBits := nBits - 6.
-	sinneg ifTrue: [sincos first inPlaceNegated].
-	cosneg ifTrue: [sincos last inPlaceNegated].
-	sincos first inPlaceDivideBy: sincos last.
-	^sincos first asArbitraryPrecisionFloatNumBits: nBits! !
+			[quarterPi := halfPi timesTwoPower: -1.
+			x > quarterPi
+				ifTrue:
+					[x inPlaceSubtract: halfPi; inPlaceNegated.
+					sincos := (self sincos: x) reverse]
+				ifFalse:
+					[sincos := self sincos: x].
+			sincos first inPlaceDivideBy: sincos last.
+			tan := sincos first].
+	neg ifTrue: [tan inPlaceNegated].
+	^tan asArbitraryPrecisionFloatNumBits: nBits! !
 !ArbitraryPrecisionFloatForTrigonometry categoriesFor: #cos!mathematical!public! !
 !ArbitraryPrecisionFloatForTrigonometry categoriesFor: #cos:!private! !
-!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #moduloNegPiToPi!private! !
-!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #powerExpansionCos:precision:!private! !
-!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #powerExpansionSin:precision:!private! !
-!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #powerExpansionSinCos:precision:!private! !
+!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #moduloNegPiToPi!public! !
+!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #pi!public! !
 !ArbitraryPrecisionFloatForTrigonometry categoriesFor: #sin!mathematical!public! !
 !ArbitraryPrecisionFloatForTrigonometry categoriesFor: #sin:!private! !
 !ArbitraryPrecisionFloatForTrigonometry categoriesFor: #sincos!mathematical!public! !
