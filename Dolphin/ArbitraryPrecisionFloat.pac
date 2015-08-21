@@ -167,7 +167,7 @@ asArbitraryPrecisionFloatNumBits: n
 	^ (numerator asArbitraryPrecisionFloatNumBits: n)
 		inPlaceDivideBy: (denominator asArbitraryPrecisionFloatNumBits: n)"
 
-	| a b q r exponent nBits ha hb hq q1 |
+	| a b mantissa exponent nBits ha hb hm hasTruncatedBits |
 	a := numerator abs.
 	b := denominator abs.
 	ha := a highBit.
@@ -181,39 +181,33 @@ asArbitraryPrecisionFloatNumBits: n
 			[^(numerator asArbitraryPrecisionFloatNumBits: n) 
 				inPlaceDivideBy: (denominator asArbitraryPrecisionFloatNumBits: n)].
 
-	"Try and obtain a mantissa with n+1 bits by integer division.
-	This is n bits for mantissa plus 1 bit for rounding
-	First guess is rough, we might get one more bit or one less"
+	"Shift the fraction by a power of two exponent so as to obtain a mantissa with n+1 bits.
+	First guess is rough, the mantissa might have n+2 bits."
 	exponent := ha - hb - nBits.
 	exponent > 0 
 		ifTrue: [b := b bitShift: exponent]
 		ifFalse: [a := a bitShift: exponent negated].
-	q := a quo: b.
-	r := a - (q * b).
-	hq := q highBit.
+	mantissa := a quo: b.
+	hasTruncatedBits := a > (mantissa * b).
+	hm := mantissa highBit.
 
-	"Use exactly nBits"
-	hq > nBits 
+	"Remove excess bits in the mantissa."
+	hm > nBits 
 		ifTrue: 
-			[exponent := exponent + hq - nBits.
-			r := (q bitAnd: (1 bitShift: hq - nBits) - 1) * b + r.
-			q := q bitShift: nBits - hq].
-	hq < nBits 
-		ifTrue: 
-			[exponent := exponent + hq - nBits.
-			q1 := (r bitShift: nBits - hq) quo: b.
-			q := (q bitShift: nBits - hq) bitAnd: q1.
-			r := (r bitShift: nBits - hq) - (q1 * b)].
+			[exponent := exponent + hm - nBits.
+			hasTruncatedBits := hasTruncatedBits or: [mantissa lowBit <= hm - nBits].
+			mantissa := mantissa bitShift: nBits - hm].
 
-	"check if we should round upward.
-	The case of exact half (q bitAnd: 1) = 1 & (r isZero)
-	will be handled by Integer>>asDouble"
-	((q bitAnd: 1) isZero or: [r isZero]) ifFalse: [q := q + 1].
+	"Check if mantissa must be rounded upward.
+	The case of tie (mantissa odd & hasTruncatedBits not)
+	will be handled by Integer>>asArbitraryPrecisionFloatNumBits:."
+	(hasTruncatedBits and: [mantissa odd])
+		ifTrue: [mantissa := mantissa + 1].
 
-	"build the Double"
+	"build the ArbitraryPrecisionFloat from mantissa and exponent"
 	^(self positive 
-		ifTrue: [q asArbitraryPrecisionFloatNumBits: n]
-		ifFalse: [q negated asArbitraryPrecisionFloatNumBits: n]) 
+		ifTrue: [mantissa asArbitraryPrecisionFloatNumBits: n]
+		ifFalse: [mantissa negated asArbitraryPrecisionFloatNumBits: n]) 
 			inPlaceTimesTwoPower: exponent!
 
 compareWithArbitraryPrecisionFloat: aFloat
