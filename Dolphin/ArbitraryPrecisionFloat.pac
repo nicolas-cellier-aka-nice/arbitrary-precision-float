@@ -341,40 +341,35 @@ absPrintExactlyOn: aStream base: base
 	This version guarantees that the printed representation exactly represents my value
 	by using exact integer arithmetic."
 
-	| fBase significand exp baseExpEstimate be be1 r s mPlus mMinus scale roundingIncludesLimits d tc1 tc2 fixedFormat decPointCount |
+	| fBase significand exp baseExpEstimate r s mPlus mMinus scale roundingIncludesLimits d tc1 tc2 fixedFormat decPointCount shead slowbit |
 	fBase := base asFloat.
-	self reduce.
+	self normalize.
 	significand := mantissa abs.
 	roundingIncludesLimits := significand even.
 	exp := biasedExponent.
 	baseExpEstimate := (self exponent * 2 ln / fBase ln - 1.0e-10) ceiling.
 	exp >= 0
 		ifTrue:
-			[be := 1 << exp.
-			significand ~= 1
+			[significand lowBit = nBits
 				ifTrue:
-					[r := significand * be * 2.
-					s := 2.
-					mPlus := be.
-					mMinus := be]
-				ifFalse:
-					[be1 := be * 2.
-					r := significand * be1 * 2.
+					[r := significand bitShift: 2 + exp.
 					s := 4.
-					mPlus := be1.
-					mMinus := be]]
+					mPlus := 2 * (mMinus := 1 bitShift: exp)]
+				ifFalse:
+					[r := significand bitShift: 1 + exp.
+					s := 2.
+					mPlus := mMinus := 1 bitShift: exp]]
 		ifFalse:
-			[significand ~= 1
+			[significand lowBit = nBits
 				ifTrue:
-					[r := significand * 2.
-					s := (1 << (exp negated)) * 2.
-					mPlus := 1.
+					[r := significand bitShift: 2.
+					s := 1 bitShift: 2 - exp.
+					mPlus := 2.
 					mMinus := 1]
 				ifFalse:
-					[r := significand * 4.
-					s := (1 << (exp negated + 1)) * 2.
-					mPlus := 2.
-					mMinus := 1]].
+					[r := significand bitShift: 1.
+					s := 1 bitShift: 1 - exp.
+					mPlus := mMinus := 1]].
 	baseExpEstimate >= 0
 		ifTrue: [s := s * (base raisedToInteger: baseExpEstimate)]
 		ifFalse:
@@ -382,7 +377,7 @@ absPrintExactlyOn: aStream base: base
 			r := r * scale.
 			mPlus := mPlus * scale.
 			mMinus := mMinus * scale].
-	(r + mPlus > s) | (roundingIncludesLimits & (r + mPlus = s))
+	((r + mPlus >= s) and: [roundingIncludesLimits or: [r + mPlus > s]])
 		ifTrue: [baseExpEstimate := baseExpEstimate + 1]
 		ifFalse:
 			[r := r * base.
@@ -394,11 +389,13 @@ absPrintExactlyOn: aStream base: base
 			baseExpEstimate <= 0
 				ifTrue: [aStream nextPutAll: ('0.000000' copyFrom: 1 to: 2 - baseExpEstimate)]]
 		ifFalse:
-			[decPointCount := 1]. 
-	[d := r // s.
-	r := r \\ s.
-	(tc1 := (r < mMinus) | (roundingIncludesLimits & (r = mMinus))) |
-	(tc2 := (r + mPlus > s) | (roundingIncludesLimits & (r + mPlus = s)))] whileFalse:
+			[decPointCount := 1].
+	slowbit := 1 - s lowBit .
+	shead := s bitShift: slowbit.
+	[d := (r bitShift: slowbit) // shead.
+	r := r - (d * s).
+	(tc1 := (r <= mMinus) and: [roundingIncludesLimits or: [r < mMinus]]) |
+	(tc2 := (r + mPlus >= s) and: [roundingIncludesLimits or: [r + mPlus > s]])] whileFalse:
 		[aStream nextPut: (Character digitValue: d).
 		r := r * base.
 		mPlus := mPlus * base.
@@ -406,7 +403,7 @@ absPrintExactlyOn: aStream base: base
 		decPointCount := decPointCount - 1.
 		decPointCount = 0 ifTrue: [aStream nextPut: $.]].
 	tc2 ifTrue:
-		[tc1 not | (tc1 & (r*2 >= s)) ifTrue: [d := d + 1]].
+		[(tc1 not or: [r * 2 >= s]) ifTrue: [d := d + 1]].
 	aStream nextPut: (Character digitValue: d).
 	decPointCount > 0
 		ifTrue:
