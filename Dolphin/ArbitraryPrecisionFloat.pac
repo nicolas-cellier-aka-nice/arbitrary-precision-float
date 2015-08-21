@@ -145,7 +145,7 @@ subtractFromArbitraryPrecisionFloat: anArbitraryPrecisionFloat
 asArbitraryPrecisionFloatNumBits: n 
 	| mantissa exponent |
 	self isZero ifTrue: [^0 asArbitraryPrecisionFloatNumBits: n ].
-	exponent := (self exponent max:Float emin - 1) 
+	exponent := (self exponent max:-1022) 
 				- Float precision + 1.
 	mantissa := (self timesTwoPower: exponent negated) truncated. 
 	^ ArbitraryPrecisionFloat
@@ -599,14 +599,14 @@ asFloat
 	
 	| float scaled |
 	nBits <= Float precision ifTrue: [^mantissa asFloat timesTwoPower: biasedExponent].
-	self exponent >= Float emin ifTrue: [^(self copy setPrecisionTo: Float precision) asFloat].
+	self exponent >= -1022 ifTrue: [^(self copy setPrecisionTo: Float precision) asFloat].
 	"In case of gradual underflow, keep significand + one excess bit (tie)"
-	scaled := self timesTwoPower: Float precision - Float emin.
+	scaled := self timesTwoPower: Float precision + 1022.
 	float := scaled integerPart asFloat.
 	"check for excess bits, and let the machine do the rounding for us"
 	scaled fractionPart isZero ifFalse: [float := float + (self negative ifTrue: [-0.5] ifFalse: [0.5])].
 	(float isZero and: [self negative]) ifTrue: [^Float negativeZero].
-	^float timesTwoPower: Float emin - Float precision!
+	^float timesTwoPower: -1022 - Float precision!
 
 asFraction
 

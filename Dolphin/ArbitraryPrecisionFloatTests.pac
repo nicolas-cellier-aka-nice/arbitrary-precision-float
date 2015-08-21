@@ -192,20 +192,20 @@ testAsFloatWithUnderflow
 	| fmin fminA |
 	fmin := Float fmin.
 	fminA := fmin asArbitraryPrecisionFloatNumBits: one numBits.
-	Float emin - Float precision + 1 to: Float emin + 1 do: [:n |
+	-1022 - Float precision + 1 to: -1022 + 1 do: [:n |
 		self assert: ((one timesTwoPower: n) + fminA) asFloat = ((1.0e0 timesTwoPower: n) + fmin)].!
 
 testAsFloatWithUnderflowAndExcessPrecision
 	| fmin expected shouldRoundUp shouldRoundDown tooSmall exactTie |
-	fmin := Float fmin asArbitraryPrecisionFloatNumBits: Float precision * 2.
+	fmin := Float fminDenormalized asArbitraryPrecisionFloatNumBits: Float precision * 2.
 
 	shouldRoundUp := (fmin timesTwoPower: 1) + (fmin timesTwoPower: -1) + (fmin timesTwoPower: -1 - Float precision).
-	expected := Float fmin * 3.
+	expected := Float fminDenormalized * 3.
 	self assert: shouldRoundUp asFloat = expected.
 	self assert: shouldRoundUp negated asFloat = expected negated.
 
 	shouldRoundDown := (fmin timesTwoPower: 1) + (fmin timesTwoPower: -1 - Float precision).
-	expected := Float fmin * 2.
+	expected := Float fminDenormalized * 2.
 	self assert: shouldRoundDown asFloat = expected.
 	self assert: shouldRoundDown negated asFloat = expected negated.
 
@@ -213,7 +213,7 @@ testAsFloatWithUnderflowAndExcessPrecision
 	self assert: tooSmall asFloat isZero.
 	self assert: tooSmall asFloat sign = -1.
 
-	exactTie := (Float fminNormalized - Float fmin asArbitraryPrecisionFloatNumBits: Float precision * 2) + (fmin/2).
+	exactTie := (Float fminNormalized - Float fminDenormalized asArbitraryPrecisionFloatNumBits: Float precision * 2) + (fmin/2).
 	expected := Float fminNormalized.
 	self assert: exactTie asFloat = expected.
 	self assert: exactTie negated asFloat = expected negated!
