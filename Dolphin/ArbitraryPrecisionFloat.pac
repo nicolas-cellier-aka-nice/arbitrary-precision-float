@@ -195,7 +195,7 @@ asArbitraryPrecisionFloatNumBits: n
 	hm > nBits 
 		ifTrue: 
 			[exponent := exponent + hm - nBits.
-			hasTruncatedBits := hasTruncatedBits or: [mantissa lowBit <= hm - nBits].
+			hasTruncatedBits := hasTruncatedBits or: [mantissa lowBit <= (hm - nBits)].
 			mantissa := mantissa bitShift: nBits - hm].
 
 	"Check if mantissa must be rounded upward.
