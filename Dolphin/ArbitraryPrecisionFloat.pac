@@ -1611,6 +1611,12 @@ sqrt
 	guess inPlaceTimesTwoPower: norm.
 	^guess asArbitraryPrecisionFloatNumBits: nBits!
 
+squared
+	| result |
+	result := self copy.
+	result inPlaceMultiplyBy: self.
+	^result!
+
 storeOn: aStream
 	aStream nextPut: $(; nextPutAll: self class name.
 	aStream space; nextPutAll: 'mantissa:'; space; print: mantissa.
@@ -1762,6 +1768,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #sincos!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #sinh!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #sqrt!mathematical!public! !
+!ArbitraryPrecisionFloat categoriesFor: #squared!public! !
 !ArbitraryPrecisionFloat categoriesFor: #storeOn:!printing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #tan!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #tanh!mathematical!public! !
