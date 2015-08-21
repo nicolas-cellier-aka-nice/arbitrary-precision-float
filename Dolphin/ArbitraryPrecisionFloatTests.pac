@@ -184,6 +184,40 @@ testArTanhDomainError
 	self should: [(2 asArbitraryPrecisionFloatNumBits: 24) arTanh] raise: Error.
 	self should: [(-3 asArbitraryPrecisionFloatNumBits: 24) arTanh] raise: Error.!
 
+testAsFloat
+	self assert: (half asArbitraryPrecisionFloatNumBits: Float precision) asFloat = 0.5e0.
+	self assert: (half asArbitraryPrecisionFloatNumBits: Float precision * 2) asFloat = 0.5e0.!
+
+testAsFloatWithUnderflow
+	| fmin fminA |
+	fmin := Float fmin.
+	fminA := fmin asArbitraryPrecisionFloatNumBits: one numBits.
+	Float emin - Float precision + 1 to: Float emin + 1 do: [:n |
+		self assert: ((one timesTwoPower: n) + fminA) asFloat = ((1.0e0 timesTwoPower: n) + fmin)].!
+
+testAsFloatWithUnderflowAndExcessPrecision
+	| fmin expected shouldRoundUp shouldRoundDown tooSmall exactTie |
+	fmin := Float fmin asArbitraryPrecisionFloatNumBits: Float precision * 2.
+
+	shouldRoundUp := (fmin timesTwoPower: 1) + (fmin timesTwoPower: -1) + (fmin timesTwoPower: -1 - Float precision).
+	expected := Float fmin * 3.
+	self assert: shouldRoundUp asFloat = expected.
+	self assert: shouldRoundUp negated asFloat = expected negated.
+
+	shouldRoundDown := (fmin timesTwoPower: 1) + (fmin timesTwoPower: -1 - Float precision).
+	expected := Float fmin * 2.
+	self assert: shouldRoundDown asFloat = expected.
+	self assert: shouldRoundDown negated asFloat = expected negated.
+
+	tooSmall := (fmin negated timesTwoPower: -2).
+	self assert: tooSmall asFloat isZero.
+	self assert: tooSmall asFloat sign = -1.
+
+	exactTie := (Float fminNormalized - Float fmin asArbitraryPrecisionFloatNumBits: Float precision * 2) + (fmin/2).
+	expected := Float fminNormalized.
+	self assert: exactTie asFloat = expected.
+	self assert: exactTie negated asFloat = expected negated!
+
 testCoercingDivide
 	(Array with: 1/2 with: 0.5e0 with: 0.5s1) do: [:heteroHalf |
 		self assert: one / heteroHalf = two.
@@ -673,6 +707,9 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #testArSinh!public!testing-hyperbolic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testArTanh!public!testing-hyperbolic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testArTanhDomainError!public!testing-hyperbolic! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testAsFloat!public! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testAsFloatWithUnderflow!public! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testAsFloatWithUnderflowAndExcessPrecision!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testCoercingDivide!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testCoercingEqual!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testCoercingLessThan!public!testing-arithmetic! !
