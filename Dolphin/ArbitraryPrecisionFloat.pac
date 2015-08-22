@@ -606,7 +606,7 @@ asFloat
 	"check for excess bits, and let the machine do the rounding for us"
 	scaled fractionPart isZero ifFalse: [float := float + (self negative ifTrue: [-0.5] ifFalse: [0.5])].
 	(float isZero and: [self negative]) ifTrue: [^Float negativeZero].
-	^float timesTwoPower: -1022 - Float precision!
+	^float * 0.5 * Float fminDenormalized!
 
 asFraction
 
