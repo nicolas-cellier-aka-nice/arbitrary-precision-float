@@ -679,6 +679,17 @@ digitCompare: b
 		ifTrue: [(self abs - b abs) sign]
 		ifFalse: [compare]!
 
+erf
+	"Answer the error function of the receiver, that is
+	2/pi sqrt*([:t | t squared negated exp] integrateFrom: 0 to: self)."
+	| sumBits tmp |
+	self isZero ifTrue: [^self].
+	self negative ifTrue: [^self abs erf negated].
+	sumBits := nBits * 2 + 8 + (self squared rounded * 4 max: 0).
+	tmp := (self asArbitraryPrecisionFloatNumBits: sumBits) powerExpansionUnscaledErfPrecision: nBits + 16.
+	^(tmp timesTwoPower: 1) / tmp pi sqrt
+		asArbitraryPrecisionFloatNumBits: nBits!
+
 exp
 	"Answer the exponential of the receiver."
 
@@ -1427,6 +1438,27 @@ powerExpansionTanPrecision: precBits
 	sum inPlaceMultiplyBy: self.
 	^sum!
 
+powerExpansionUnscaledErfPrecision: precBits
+	"Evaluate the unscaled erf function of the receiver by power series expansion.
+	unscaledErf (x) = integral of exp(-t*t)*dt from 0 to x
+	This is the power serie: sum of terms (-1)^n*x^(2n+1)/(n!!*(2n+1)) from 0 to infinity"
+	
+	| k x4k erf pos neg term x2f x4 |
+	k := 0.
+	x2f := self asFraction squared.
+	x4 := self squared squared.	"exactly rounded thanks to double precision"
+	x4k := self one.
+	erf := self zero.
+	
+	[pos := 1 / (k*4+1).
+	neg := x2f / ((k*4+3)*(k*2+1)).
+	term := pos - neg * x4k.
+	erf inPlaceAdd: term.
+	k := k + 1.
+	x4k inPlaceMultiplyBy: x4 / (k*2-1*k*2).
+	term exponent + precBits < (self exponent min: 0)] whileFalse.
+	^(erf inPlaceMultiplyBy: self) asArbitraryPrecisionFloatNumBits: precBits!
+
 printOn: aStream
 	^self printOn: aStream base: 10!
 
@@ -1696,6 +1728,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #cos!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #cosh!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #digitCompare:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #erf!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #exp!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #exponent!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #generality!coercing!private! !
@@ -1747,6 +1780,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #powerExpansionSinPrecision:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #powerExpansionTanhPrecision:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #powerExpansionTanPrecision:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #powerExpansionUnscaledErfPrecision:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #printOn:!printing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #printOn:base:!printing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #raisedToInteger:!public! !

@@ -548,6 +548,28 @@ testPositive
 	self assert: one positive.
 	self deny: minusOne positive.!
 
+testPrintAndEvaluate
+	| emax emin leadingOne significands |
+	significands := 0 to: 1<<10-1.
+	leadingOne := 1<<10.
+	emin := -14.
+	emax := 15.
+	
+	"Test all normal finite half precision float"
+	emin to: emax do: [:e | 
+		significands do: [:s |
+			| f |
+			f := (leadingOne + s asArbitraryPrecisionFloatNumBits: 11) timesTwoPower: e - 10.
+			self assert: (Compiler evaluate: f storeString) = f.
+			self assert: (Compiler evaluate: f printString) = f.]].
+	
+	"Test all subnormal finite half precision float"
+	significands do: [:s |
+		| f |
+		f := (s asArbitraryPrecisionFloatNumBits: s highBit) timesTwoPower: emin - 10.
+		self assert: (Compiler evaluate: f storeString) = f.
+		self assert: (Compiler evaluate: f printString) = f].!
+
 testRaisedToNegativeInteger
 	| n |
 	n := 11.
@@ -735,6 +757,7 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #testNegative!public!testing-compare! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testPi!public!testing-constants! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testPositive!public!testing-compare! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testPrintAndEvaluate!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testRaisedToNegativeInteger!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testRaisedToPositiveInteger!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testReciprocal!public! !
