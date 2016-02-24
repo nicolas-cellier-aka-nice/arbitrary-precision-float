@@ -1,6 +1,6 @@
 | package |
 package := Package name: 'ArbitraryPrecisionFloatTests'.
-package paxVersion: 1;
+package paxVersion: 0;
 	basicComment: ''.
 
 
@@ -14,9 +14,12 @@ package binaryGlobalNames: (Set new
 package globalAliases: (Set new
 	yourself).
 
+package allResourceNames: (Set new
+	yourself).
+
 package setPrerequisites: (IdentitySet new
-	add: 'Object Arts\Dolphin\Base\Dolphin';
-	add: 'Camp Smalltalk\SUnit\SUnit';
+	add: '..\..\Dolphin Smalltalk 5.1\Object Arts\Dolphin\Base\Dolphin';
+	add: '..\..\Dolphin Smalltalk 5.1\Camp Smalltalk\SUnit\SUnit';
 	yourself).
 
 package!
@@ -385,6 +388,11 @@ testEqual
 	self deny: zero = 1.0.
 	self deny: 0.0 = one.!
 
+testErf
+	| serie |
+	serie := ((0 to: 10) , (1/10 to: 9/10 by: 1/10)) collect: [:e | e asFloat].
+	self checkDoublePrecisionSerie: serie forFunction: #erf!
+
 testExp
 	| badExp serie |
 	serie := ((-20 to: 20) collect: [:e |e asFloat]).
@@ -742,6 +750,7 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #testCosh!public!testing-hyperbolic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testDivide!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testEqual!public!testing-compare! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testErf!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testExp!public!testing-functions! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testExpLn!public!testing-functions! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testGreaterThan!public!testing-compare! !
@@ -780,4 +789,6 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #trigonometricSerie!private!testing-trigonometry! !
 
 "Binary Globals"!
+
+"Resources"!
 
