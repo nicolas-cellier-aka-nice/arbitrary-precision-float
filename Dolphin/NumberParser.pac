@@ -497,6 +497,9 @@ Handle special case of Float (NaN Infinity and -0.0 as negative zero)'!
 !SqueakNumberParser categoriesForClass!Unclassified! !
 !SqueakNumberParser methodsFor!
 
+allowPlusSignInExponent
+	^true!
+
 nextNumber
 	"main method for reading a number.
 	This one can read Float Integer and ScaledDecimal"
@@ -573,6 +576,7 @@ readScaleWithDefaultNumberOfDigits: anInteger
 	Do not use default number of digits, but rather answer false"
 
 	^self readScale! !
+!SqueakNumberParser categoriesFor: #allowPlusSignInExponent!public! !
 !SqueakNumberParser categoriesFor: #nextNumber!parsing!public! !
 !SqueakNumberParser categoriesFor: #readScale!private! !
 !SqueakNumberParser categoriesFor: #readScaleWithDefaultNumberOfDigits:!private! !

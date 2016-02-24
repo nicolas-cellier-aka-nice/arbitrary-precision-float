@@ -185,7 +185,7 @@ testFloatPrintString
 	100
 		timesRepeat: [bytes dwordAtOffset: 4 put: (r next * 16r100000000) truncated.
 			bytes dwordAtOffset: 0 put: (r next * 16r100000000) truncated.
-			f := bytes floatAtOffset: 0.
+			f := bytes doubleAtOffset: 0.
 			#(10)
 				do: [:base | | str |
 						str := (String new: 64) writeStream.
@@ -197,7 +197,7 @@ testFloatPrintString
 	10
 		timesRepeat: [bytes dwordAtOffset: 4 put: 16r7FE00000 + ((r next * 16r100000) truncated).
 			bytes dwordAtOffset: 0 put: (r next * 16r100000000) truncated.
-			f := bytes floatAtOffset: 0.
+			f := bytes doubleAtOffset: 0.
 			#(10)
 				do: [:base | | str |
 						str := (String new: 64) writeStream.
@@ -208,9 +208,9 @@ testFloatPrintString
 	"test infinitesimal (gradual underflow)"
 	10
 		timesRepeat: [bytes dwordAtOffset: 4 put: 0 + ((r next * 16r100000) truncated).
-			bytes dwordAtOffset: 0 put: (r nextInt: 16r100000000) truncated.
-			f := bytes floatAtOffset: 0.
-			#(2 8 10 16)
+			bytes dwordAtOffset: 0 put: (r next * 16r100000000) truncated.
+			f := bytes doubleAtOffset: 0.
+			#(10)
 				do: [:base | | str |
 						str := (String new: 64) writeStream.
 						f negative ifTrue: [str nextPut: $-].
