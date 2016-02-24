@@ -27,6 +27,9 @@ package classNames
 	yourself.
 
 package methodNames
+	add: #Integer -> #isLarge;
+	add: #LargeInteger -> #isLarge;
+	add: #SmallInteger -> #isLarge;
 	add: 'Float class' -> #negativeZero;
 	yourself.
 
@@ -99,6 +102,24 @@ negativeZero
 	^self fminDenormalized negated / self radix asFloat! !
 !Float class categoriesFor: #negativeZero!constants!public! !
 
+!Integer methodsFor!
+
+isLarge
+	^self subclassResponsibility! !
+!Integer categoriesFor: #isLarge!public!testing! !
+
+!LargeInteger methodsFor!
+
+isLarge
+	^true! !
+!LargeInteger categoriesFor: #isLarge!public!testing! !
+
+!SmallInteger methodsFor!
+
+isLarge
+	^false! !
+!SmallInteger categoriesFor: #isLarge!public!testing! !
+
 "End of package definition"!
 
 "Source Globals"!
@@ -154,8 +175,12 @@ makeFloatFromMantissa: m exponent: k base: aRadix
 	being implemented in Integer>>asFloat and Fraction>>asFloat"
 
 	^(k positive 
-		ifTrue: [m * (aRadix raisedTo: k)]
-		ifFalse: [Fraction numerator: m denominator: (aRadix raisedTo: k negated)]) asFloat!
+		ifTrue: [m * (aRadix raisedToInteger: k)]
+		ifFalse: [Fraction numerator: m denominator: (aRadix raisedToInteger: k negated)]) asFloat!
+
+nextElementaryLargeIntegerBase: aRadix	"Form an unsigned integer with incoming digits from sourceStream.	Return this integer, or zero if no digits found.	Stop reading if end of digits or if a LargeInteger is formed.	Count the number of digits and the position of lastNonZero digit and store them in instVar."	| value digit |	value := 0.	nDigits := 0.	lastNonZero := 0.	[value isLarge or: [sourceStream atEnd		or: [digit := sourceStream next digitValue.			(0 > digit or: [digit >= aRadix])				and: [sourceStream skip: -1.					true]]]]		whileFalse: [			nDigits := nDigits + 1.			0 = digit				ifFalse: [lastNonZero := nDigits].			value := value * aRadix + digit].	^value!
+
+nextInteger	"Read an Integer from sourceStream, asnwser that Integer.	This is a generic version dealing with an optional sign and a simple sequence of decimal digits.	Subclass might define extended syntax."		base := 10.	^self nextIntegerBase: base ifFail: [^self expected: ('a digit between 0 and ' copyWith: (Character digitValue: base - 1))]!
 
 nextIntegerBase: aRadix 
 	"Form an integer with following digits"
@@ -165,25 +190,20 @@ nextIntegerBase: aRadix
 	value := self nextUnsignedIntegerBase: aRadix.
 	^isNeg ifTrue: [value negated] ifFalse: [value]!
 
-nextIntegerBase: aRadix ifFail: aBlock 
-	"Form an integer with following digits"
+nextIntegerBase: aRadix ifFail: aBlock	"Form an integer with optional sign and following digits from sourceStream."		| isNeg value |	isNeg := self peekSignIsMinus.	value := self nextUnsignedIntegerOrNilBase: aRadix.	value ifNil: [^aBlock value].	^isNeg		ifTrue: [value negated]		ifFalse: [value]!
 
-	| isNeg value |
-	isNeg := self peekSignIsMinus.
-	value := self nextUnsignedIntegerBase: aRadix ifFail: [^aBlock value].
-	^isNeg ifTrue: [value negated] ifFalse: [value]!
+nextLargeIntegerBase: aRadix nPackets: nPackets 	"Form a Large integer with incoming digits from sourceStream.	Return this integer, or zero if no digits found.	Stop reading when no more digits or when nPackets elementary LargeInteger have been encountered.	Count the number of digits and the lastNonZero digit and store them in instVar"		| high nDigitsHigh lastNonZeroHigh low nDigitsLow halfPackets |	halfPackets := nPackets bitShift: -1.	halfPackets = 0 ifTrue: [^self nextElementaryLargeIntegerBase: aRadix].	high := self nextLargeIntegerBase: aRadix nPackets: halfPackets.	high isLarge ifFalse: [^high].	nDigitsHigh := nDigits.	lastNonZeroHigh := lastNonZero.	low := self nextLargeIntegerBase: aRadix nPackets: halfPackets.	nDigitsLow := nDigits.	nDigits := nDigitsHigh + nDigitsLow.	lastNonZero := lastNonZero = 0		ifTrue: [lastNonZeroHigh]		ifFalse: [lastNonZero + nDigitsHigh].	^high * (aRadix raisedToInteger: nDigitsLow) + low!
 
 nextMatchAll: aCollection 
 	"this message was originally in Squeak Stream"
 
 	| savePosition |
 	savePosition := sourceStream position.
-	aCollection do: 
-			[:each | 
-			sourceStream next = each 
-				ifFalse: 
-					[sourceStream position: savePosition.
-					^false]].
+	(aCollection anySatisfy: 
+			[:each | sourceStream atEnd or: [sourceStream next ~= each]])
+		ifTrue: 
+			[sourceStream position: savePosition.
+			^false].
 	^true!
 
 nextNumber
@@ -191,39 +211,21 @@ nextNumber
 
 	^self subclassResponsibility!
 
-nextUnsignedIntegerBase: aRadix 
-	"Form an unsigned integer with incoming digits from sourceStream.
-	Count the number of digits and the lastNonZero digit and store int in
-	instVar "
+nextUnsignedInteger	"Read an Integer from sourceStream, asnwser that Integer.	This is a generic version dealing with a simple sequence of decimal digits.	Subclass might define extended syntax."		base := 10.	^self nextUnsignedIntegerBase: base ifFail: [^self expected: ('a digit between 0 and ' copyWith: (Character digitValue: base - 1))]!
 
-	^self nextUnsignedIntegerBase: aRadix ifFail: [self expected: 'a digit between 0 and 9']!
+nextUnsignedIntegerBase: aRadix 	"Form an unsigned integer with incoming digits from sourceStream.	Fail if no digit found.	Count the number of digits and the lastNonZero digit and store int in instVar "		| value |	value := self nextUnsignedIntegerOrNilBase: aRadix.	value ifNil: [^self expected: ('a digit between 0 and ' copyWith: (Character digitValue: aRadix - 1))].	^value!
 
-nextUnsignedIntegerBase: aRadix ifFail: errorBlock 
-	"Form an unsigned integer with incoming digits from sourceStream.
-	Count the number of digits and the lastNonZero digit and store in instVar.
-	Answer the integer value read from sourceStream"
+nextUnsignedIntegerBase: aRadix ifFail: errorBlock	"Form an unsigned integer with incoming digits from sourceStream.	Answer this integer, or execute errorBlock if no digit found.	Count the number of digits and the position of lastNonZero digit and store them in instVar"		| value |	value := self nextUnsignedIntegerOrNilBase: aRadix.	value ifNil: [^errorBlock value].	^value!
 
-	| value digit |
-	value := 0.
-	nDigits := 0.
-	lastNonZero := 0.
-	
-	[sourceStream atEnd or: 
-			[digit := sourceStream next digitValue.
-			(digit < 0 or: [digit >= aRadix]) and: 
-					[sourceStream skip: -1.
-					true]]] 
-			whileFalse: 
-				[nDigits := nDigits + 1.
-				digit isZero ifFalse: [lastNonZero := nDigits].
-				value := value * aRadix + digit].
-	nDigits = 0 ifTrue: [errorBlock value].
-	^value!
+nextUnsignedIntegerOrNilBase: aRadix	"Form an unsigned integer with incoming digits from sourceStream.	Answer this integer, or nil if no digit found.	Count the number of digits and the position of lastNonZero digit and store them in instVar"		| nPackets high nDigitsHigh lastNonZeroHigh low |	"read no more digits than one elementary LargeInteger"	high :=  self nextElementaryLargeIntegerBase: aRadix.	nDigits = 0 ifTrue: [^nil].		"Not enough digits to form a LargeInteger, stop iteration"	high isLarge ifFalse: [^high].	"We now have to engage arithmetic with LargeInteger	Decompose the integer in a high and low packets of growing size:"	nPackets := 1.	nDigitsHigh := nDigits.	lastNonZeroHigh := lastNonZero.	[	low := self nextLargeIntegerBase: aRadix nPackets: nPackets .	high := high * (aRadix raisedToInteger: nDigits) + low.	lastNonZero = 0 ifFalse: [lastNonZeroHigh := lastNonZero + nDigitsHigh].	nDigitsHigh := nDigitsHigh + nDigits.	low isLarge]		whileTrue: [nPackets := nPackets * 2].	nDigits := nDigitsHigh.	lastNonZero := lastNonZeroHigh.	^high!
 
 on: aStringOrStream 
 	sourceStream := aStringOrStream isString 
 				ifTrue: [ReadStream on: aStringOrStream]
 				ifFalse: [aStringOrStream].
+	base := 10.
+	neg := false.
+	integerPart := fractionPart := exponent := 0.
 	requestor := failBlock := nil!
 
 peekSignIsMinus
@@ -235,28 +237,7 @@ peekSignIsMinus
 	isMinus ifFalse: [self allowPlusSign ifTrue: [sourceStream peekFor: $+]].
 	^isMinus!
 
-readExponent
-	"read the exponent if any (stored in instVar).
-	Answer true if found, answer false if none.
-	If exponent letter is not followed by a digit,
-	this is not considered as an error.
-	Exponent are always read in base 10, though i do not see why..."
-
-	| eneg epos |
-	exponent := 0.
-	sourceStream atEnd ifTrue: [^false].
-	(self exponentLetters includes: sourceStream next) 
-		ifFalse: 
-			[sourceStream skip: -1.
-			^false].
-	eneg := sourceStream peekFor: $-.
-	epos := (eneg not and: [self allowPlusSignInExponent]) ifTrue: [sourceStream peekFor: $+] ifFalse: [false].
-	exponent := self nextUnsignedIntegerBase: 10
-				ifFail: 
-					[sourceStream skip: (eneg | epos ifTrue: [-2] ifFalse: [-1]).
-					^false].
-	eneg ifTrue: [exponent := exponent negated].
-	^true!
+readExponent	"read the exponent if any (stored in instVar).	Answer true if found, answer false if none.	If exponent letter is not followed by a digit,	this is not considered as an error.	Exponent are always read in base 10."		| eneg epos |	exponent := 0.	sourceStream atEnd ifTrue: [^ false].	(self exponentLetters includes: sourceStream peek)		ifFalse: [^ false].	sourceStream next.	eneg := sourceStream peekFor: $-.	epos := eneg not and: [self allowPlusSignInExponent and: [sourceStream peekFor: $+]].	exponent := self nextUnsignedIntegerOrNilBase: 10.	exponent ifNil: ["Oops, there was no digit after the exponent letter.Ungobble the letter"		exponent := 0.		sourceStream						skip: ((eneg or: [epos])								ifTrue: [-2]								ifFalse: [-1]).					^ false].	eneg ifTrue: [exponent := exponent negated].	^true!
 
 requestor: anObjectOrNil 
 	requestor := anObjectOrNil! !
@@ -267,12 +248,17 @@ requestor: anObjectOrNil
 !NumberParser categoriesFor: #fail!error handling!public! !
 !NumberParser categoriesFor: #failBlock:!accessing!public! !
 !NumberParser categoriesFor: #makeFloatFromMantissa:exponent:base:!private! !
+!NumberParser categoriesFor: #nextElementaryLargeIntegerBase:!private! !
+!NumberParser categoriesFor: #nextInteger!parsing!public! !
 !NumberParser categoriesFor: #nextIntegerBase:!parsing!public! !
 !NumberParser categoriesFor: #nextIntegerBase:ifFail:!parsing!public! !
+!NumberParser categoriesFor: #nextLargeIntegerBase:nPackets:!private! !
 !NumberParser categoriesFor: #nextMatchAll:!private! !
 !NumberParser categoriesFor: #nextNumber!parsing!public! !
+!NumberParser categoriesFor: #nextUnsignedInteger!parsing!public! !
 !NumberParser categoriesFor: #nextUnsignedIntegerBase:!parsing!public! !
 !NumberParser categoriesFor: #nextUnsignedIntegerBase:ifFail:!parsing!public! !
+!NumberParser categoriesFor: #nextUnsignedIntegerOrNilBase:!parsing!public! !
 !NumberParser categoriesFor: #on:!initialize/release!public! !
 !NumberParser categoriesFor: #peekSignIsMinus!parsing!private! !
 !NumberParser categoriesFor: #readExponent!parsing!private! !
@@ -649,7 +635,7 @@ readExponent
 					0].
 	eneg ifTrue: [exponent := exponent negated].
 	^true! !
-!VWNumberParser categoriesFor: #makeIntegerOrScaledInteger!public! !
+!VWNumberParser categoriesFor: #makeIntegerOrScaledInteger!private! !
 !VWNumberParser categoriesFor: #readExponent!private! !
 
 FORTRANNumberParserTest guid: (GUID fromString: '{890CFC1F-59BF-4468-9B50-EDA60A66F94D}')!

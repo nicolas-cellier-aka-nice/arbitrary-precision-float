@@ -71,7 +71,7 @@ package globalAliases: (Set new
 	yourself).
 
 package setPrerequisites: (IdentitySet new
-	add: 'Object Arts\Dolphin\Base\Dolphin';
+	add: '..\..\..\Core\Object Arts\Dolphin\Base\Dolphin';
 	yourself).
 
 package!
@@ -1810,14 +1810,8 @@ mantissa: mantisInteger exponent: expoInteger nBits: nbitsInteger
 	^self basicNew 
 		mantissa: mantisInteger
 		exponent: expoInteger
-		nBits: nbitsInteger!
-
-readFrom: aStream numBits: n
-	"read a number from an ASCII encoded decimal representation"
-	
-	self error: 'NOT IMPLEMENTED YET'! !
+		nBits: nbitsInteger! !
 !ArbitraryPrecisionFloat class categoriesFor: #mantissa:exponent:nBits:!instance creation!public! !
-!ArbitraryPrecisionFloat class categoriesFor: #readFrom:numBits:!instance creation!public! !
 
 ArbitraryPrecisionFloatForTrigonometry guid: (GUID fromString: '{3EEA7D3A-E96C-4EBD-8DEF-8A4B258F21DA}')!
 ArbitraryPrecisionFloatForTrigonometry comment: ''!
