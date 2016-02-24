@@ -1,7 +1,7 @@
 | package |
 package := Package name: 'ArbitraryPrecisionFloatTests'.
-package paxVersion: 0;
-	basicComment: ''.
+package paxVersion: 1;
+	basicComment: 'Hold the tests for ArbitraryPrecisionFloat'.
 
 
 package classNames
@@ -14,12 +14,9 @@ package binaryGlobalNames: (Set new
 package globalAliases: (Set new
 	yourself).
 
-package allResourceNames: (Set new
-	yourself).
-
 package setPrerequisites: (IdentitySet new
-	add: '..\..\Dolphin Smalltalk 5.1\Object Arts\Dolphin\Base\Dolphin';
-	add: '..\..\Dolphin Smalltalk 5.1\Camp Smalltalk\SUnit\SUnit';
+	add: '..\..\..\Core\Object Arts\Dolphin\Base\Dolphin';
+	add: '..\..\..\Core\Contributions\Camp Smalltalk\SUnit\SUnit';
 	yourself).
 
 package!
@@ -789,6 +786,4 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #trigonometricSerie!private!testing-trigonometry! !
 
 "Binary Globals"!
-
-"Resources"!
 

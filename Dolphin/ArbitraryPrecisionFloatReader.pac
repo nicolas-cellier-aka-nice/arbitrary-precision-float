@@ -1,7 +1,7 @@
 | package |
 package := Package name: 'ArbitraryPrecisionFloatReader'.
 package paxVersion: 1;
-	basicComment: ''.
+	basicComment: 'This package contains the code for reading ArbitraryPrecisionFloat from a decimal floating point String representation'.
 
 
 package methodNames
