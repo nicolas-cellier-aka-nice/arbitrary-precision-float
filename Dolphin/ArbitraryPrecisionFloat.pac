@@ -1870,28 +1870,23 @@ printOn: aStream base: base
 printOn: aStream maxDecimalPlaces: placesDesired
 	"Refine super implementation in order to avoid any rounding error caused by rounded or roundTo:"
 	
-	self > 0
-		ifTrue: [self absPrintExactlyOn: aStream base: 10 decimalPlaces: placesDesired showTrailingFractionalZeros: false]
+	self isZero
+		ifTrue: [aStream nextPutAll: '0.0']
 		ifFalse:
-			[self signBit = 1
-				ifTrue: [aStream nextPutAll: '-'].
-			self = 0
-				ifTrue: [aStream nextPutAll: '0.0']
-				ifFalse: [self absPrintExactlyOn: aStream base: 10 decimalPlaces: placesDesired showTrailingFractionalZeros: false]]!
+			[self negative ifTrue: [aStream nextPutAll: '-'].
+			self absPrintExactlyOn: aStream base: 10 decimalPlaces: placesDesired showTrailingFractionalZeros: false]!
 
 printOn: aStream showingDecimalPlaces: placesDesired
 	"Refine super implementation in order to avoid any rounding error caused by rounded or roundTo:"
-	
-	self > 0
-		ifTrue: [self absPrintExactlyOn: aStream base: 10 decimalPlaces: placesDesired showTrailingFractionalZeros: true]
+
+	self isZero
+		ifTrue: 
+			[aStream nextPut: $0.
+			placesDesired > 0 ifTrue: [aStream nextPut: $.; next: placesDesired put: $0]]
 		ifFalse:
-			[self signBit = 1
-				ifTrue: [aStream nextPutAll: '-'].
-			self = 0
-				ifTrue:
-					[aStream nextPut: $0.
-					placesDesired > 0 ifTrue: [aStream nextPut: $.; next: placesDesired put: $0]]
-				ifFalse: [self absPrintExactlyOn: aStream base: 10 decimalPlaces: placesDesired showTrailingFractionalZeros: true]]!
+			[self negative ifTrue: [aStream nextPutAll: '-'].
+			self absPrintExactlyOn: aStream base: 10 decimalPlaces: placesDesired showTrailingFractionalZeros: true]!
+
 
 raisedToInteger: anInteger 
 	| bitProbe highPrecisionSelf n result |
