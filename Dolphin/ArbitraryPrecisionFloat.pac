@@ -954,22 +954,21 @@ erf
 exp
 	"Answer the exponential of the receiver."
 
-	| ln2 x q r ri res n maxIter p one two |
-	one := self one.
-	two := one timesTwoPower: 1.
+	| ln2 x q r ri res n maxIter p one |
+	one := self one asArbitraryPrecisionFloatNumBits: (nBits + 16 max: self exponent + 16).
 	"Use following decomposition:
 		x exp = (2 ln * q + r) exp.
 		x exp = (2**q * r exp)"
-	ln2 := two ln.
+	ln2 := one ln2.
 	x := self / ln2.
 	q := x truncated.
 	r := (x - q) * ln2.
 
 	"now compute r exp by power series expansion
 	we compute (r/(2**p)) exp ** (2**p) in order to have faster convergence"
-	p := 10 min: nBits // 2.
+	p := 4 min: nBits // 2.
 	r := r timesTwoPower: p negated.
-	ri := one asArbitraryPrecisionFloatNumBits: nBits + 16.
+	ri := one copy.
 	res := ri copy.
 	n := 0.
 	maxIter := 1 + ((nBits + 16) / p) ceiling.
@@ -981,7 +980,7 @@ exp
 	res inPlaceTimesTwoPower: q.
 
 	"now use a Newton iteration to refine the result
-	res = res * (self - res ln + 1)"
+	res = res * (a - res ln + 1)"
 	[| oldres delta |
 	oldres := res.
 	res := res asArbitraryPrecisionFloatNumBits: res numBits + 32.
