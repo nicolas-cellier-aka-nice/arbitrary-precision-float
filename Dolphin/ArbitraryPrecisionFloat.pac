@@ -1722,6 +1722,11 @@ shift: m by: d
 sign
 	^mantissa sign!
 
+signBit
+	^mantissa < 0
+		ifTrue: [1]
+		ifFalse: [0]!
+
 significandAsInteger
 	self normalize.
 	^mantissa abs!
@@ -1976,6 +1981,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #setPrecisionTo:!initialize/release!public! !
 !ArbitraryPrecisionFloat categoriesFor: #shift:by:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #sign!accessing!public! !
+!ArbitraryPrecisionFloat categoriesFor: #signBit!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #significandAsInteger!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #sin!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #sincos!mathematical!public! !
