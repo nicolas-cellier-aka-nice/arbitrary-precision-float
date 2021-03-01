@@ -265,8 +265,10 @@ compareWithArbitraryPrecisionFloat: aFloat
 	^aFloat asTrueFraction = self!
 
 greaterThanArbitraryPrecisionFloat: aFloat
-	"Private - Answer whether the receiver is greater than the known Float, aFloat"
+	"Private - Answer whether the receiver is greater than the known Float, aFloat
+	Implementation note: since ArbitraryPrecisionFloat can have really huge exponent, differ asTrueFraction asMuch as possible"
 
+	self positive = aFloat positive ifFalse: [^self positive].
 	^aFloat asTrueFraction < self! !
 !Fraction categoriesFor: #asArbitraryPrecisionFloatNumBits:!converting!public! !
 !Fraction categoriesFor: #compareWithArbitraryPrecisionFloat:!double dispatch!private! !
@@ -284,9 +286,12 @@ compareWithArbitraryPrecisionFloat: aFloat
 	^aFloat asTrueFraction = self!
 
 greaterThanArbitraryPrecisionFloat: aFloat
-	"Private - Answer whether the receiver is greater than the known Float, aFloat."
+	"Private - Answer whether the receiver is greater than the known Float, aFloat.
+	Implementation note: since ArbitraryPrecisionFloat can have really huge exponent, differ asTrueFraction asMuch as possible"
 
-	^aFloat asTrueFraction < self! !
+	self positive = aFloat positive ifFalse: [^self positive].
+	self abs highBit - 1 = aFloat exponent ifTrue: [^aFloat asTrueFraction < self].
+	^self abs highBit - 1 < aFloat exponent xor: self > 0! !
 !Integer categoriesFor: #asArbitraryPrecisionFloatNumBits:!converting!public! !
 !Integer categoriesFor: #compareWithArbitraryPrecisionFloat:!double dispatch!private! !
 !Integer categoriesFor: #greaterThanArbitraryPrecisionFloat:!double dispatch!private! !
@@ -1025,10 +1030,13 @@ greaterThanFloat: aFloat
 	^aFloat negative!
 
 greaterThanFraction: aFraction
+	aFraction positive = self positive ifFalse: [^self positive].
 	^self asTrueFraction > aFraction!
 
 greaterThanInteger: anInteger
-	^self asTrueFraction > anInteger!
+	anInteger positive = self positive ifFalse: [^self positive].
+	anInteger abs highBit - 1 = self exponent ifTrue: [^self asTrueFraction > anInteger].
+	^anInteger abs highBit - 1 > self exponent xor: anInteger > 0!
 
 halfPi
 	"Answer the value of half pi rounded to nBits"
@@ -2051,7 +2059,7 @@ sqrt
 	"Answer the square root of the receiver."
 
 	| decimalPlaces n norm guess previousGuess one stopIteration |
-	self < 0 
+	self negative
 		ifTrue: 
 			[^ FloatingPointException signal: 'undefined if less than zero.'].
 	self isZero ifTrue: [^self].
