@@ -1128,7 +1128,7 @@ inPlaceNegated
 
 inPlaceReciprocal
 	| ma h |
-	self isZero ifTrue: [(ZeroDivide dividend: self) signal].
+	self isZero ifTrue: [(ZeroDivide dividend: 1) signal].
 	ma := mantissa abs.
 	h := ma highBit.
 	mantissa := (1 bitShift: h + nBits) + ma quo: (self shift: mantissa by: 1).
