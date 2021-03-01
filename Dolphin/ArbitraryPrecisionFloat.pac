@@ -909,7 +909,7 @@ cos: x
 	one := x one.
 	power timesRepeat:
 		["Evaluate cos(2x)=2 cos(x)^2-1"
-		cos inPlaceMultiplyBy: cos; inPlaceTimesTwoPower: 1; inPlaceSubtract: one].
+		cos inPlaceSquared; inPlaceTimesTwoPower: 1; inPlaceSubtract: one].
 	^cos!
 
 cosh
@@ -988,7 +988,7 @@ exp
 			[n := n + 1.
 			ri inPlaceMultiplyBy: r / n.
 			res inPlaceAdd: ri].
-	p timesRepeat: [res inPlaceMultiplyBy: res].
+	p timesRepeat: [res inPlaceSquared].
 	res inPlaceTimesTwoPower: q.
 
 	"now use a Newton iteration to refine the result
@@ -1192,6 +1192,11 @@ inPlaceSqrt
 			[(guessSquared - guess - mantissa) negative ifFalse: [guess := guess - 1]].
 	mantissa := guess.
 	biasedExponent := biasedExponent quo: 2.
+	self round!
+
+inPlaceSquared
+	mantissa := mantissa squared.
+	biasedExponent := biasedExponent + biasedExponent.
 	self round!
 
 inPlaceSubtract: b 
@@ -1912,17 +1917,15 @@ raisedToInteger: anInteger
 	(n < 5 or: [n * nBits < 512])
 		ifTrue: [^ self naiveRaisedToInteger: anInteger].
 	bitProbe := 1 bitShift: n highBit - 1.
-	highPrecisionSelf := self asArbitraryPrecisionFloatNumBits: n highBit * 2 + nBits + 2.
-	result := highPrecisionSelf one.
+	highPrecisionSelf := self asArbitraryPrecisionFloatNumBits: n highBit + nBits * 2 + 2.
+	result := highPrecisionSelf one copy.
 	
-	[(n bitAnd: bitProbe) = 0 ifFalse: [result := result * highPrecisionSelf].
+	[(n bitAnd: bitProbe) = 0 ifFalse: [result inPlaceMultiplyBy: highPrecisionSelf].
 	(bitProbe := bitProbe bitShift: -1) > 0]
-		whileTrue: [result := result squared].
+		whileTrue: [result inPlaceSquared].
 		
-	^ (anInteger negative
-		ifTrue: [result reciprocal]
-		ifFalse: [result])
-		asArbitraryPrecisionFloatNumBits: nBits!
+	anInteger negative ifTrue: [result inPlaceReciprocal].
+	^result asArbitraryPrecisionFloatNumBits: nBits!
 
 reciprocal
 	^self copy inPlaceReciprocal!
@@ -2055,7 +2058,7 @@ sincos: x
 		["Evaluate sin(2x)=2 sin(x) cos(x)"
 		sin inPlaceMultiplyBy: cos; inPlaceTimesTwoPower: 1.
 		"Evaluate cos(2x)=2 cos(x)^2-1"
-		cos inPlaceMultiplyBy: cos; inPlaceTimesTwoPower: 1; inPlaceSubtract: one].
+		cos inPlaceSquared; inPlaceTimesTwoPower: 1; inPlaceSubtract: one].
 	^sincos!
 
 sinh
@@ -2127,7 +2130,7 @@ sqrt
 squared
 	| result |
 	result := self copy.
-	result inPlaceMultiplyBy: self.
+	result inPlaceSquared.
 	^result!
 
 storeOn: aStream
@@ -2184,7 +2187,7 @@ tanh
 		ifTrue: [^(x powerExpansionTanhPrecision: x numBits) asArbitraryPrecisionFloatNumBits: nBits].
 	e := x exp.
 	one :=x one.
-	e inPlaceMultiplyBy: e.
+	e inPlaceSquared.
 	ep := e + one.
 	^e
 		inPlaceSubtract: one;
@@ -2269,6 +2272,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceNegated!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceReciprocal!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceSqrt!private! !
+!ArbitraryPrecisionFloat categoriesFor: #inPlaceSquared!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceSubtract:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceSubtractNoRound:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceTimesTwoPower:!private! !
