@@ -1106,7 +1106,12 @@ inPlaceCopy: b
 	nBits := b numBits!
 
 inPlaceDivideBy: y 
-	"reference http://citeseer.ist.psu.edu/rd/34625967%2C717775%2C1%2C0.25%2CDownload/http://citeseer.ist.psu.edu/cache/papers/cs2/516/http:zSzzSzperso.ens-lyon.frzSzjean-michel.mullerzSzDivIEEETC-aug04.pdf/brisebarre04accelerating.pdf"
+	"Reference: Accelerating Correctly Rounded
+	Floating-Point Division when the Divisor
+	Is Known in Advance - Nicolas Brisebarre,
+	Jean-Michel Muller, Member, IEEE, and
+	Saurabh Kumar Raina -
+	http://perso.ens-lyon.fr/jean-michel.muller/DivIEEETC-aug04.pdf"
 
 	| zh x q |
 	zh := y reciprocal reduce.
