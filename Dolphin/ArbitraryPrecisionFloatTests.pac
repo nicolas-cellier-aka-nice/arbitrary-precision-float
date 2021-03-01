@@ -436,6 +436,12 @@ testGreaterThan
 	self assert: one > minusOne.
 	self assert: minusOne > minusTwo.!
 
+testHalfPi
+	| pi halfPi |
+	pi := one pi.
+	halfPi := one halfPi.
+	self assert: halfPi + halfPi = pi!
+
 testIEEEArithmeticVersusFloat
 	| floats ops ref new |
 	floats := #(1.0 2.0 3.0 5.0 10.0 0.5 0.25 1.0e60 0.1 1.1e-30 1.0e-60) asOrderedCollection.
@@ -801,6 +807,7 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #testExp!public!testing-functions! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testExpLn!public!testing-functions! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testGreaterThan!public!testing-compare! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testHalfPi!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testIEEEArithmeticVersusFloat!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testIEEEArithmeticVersusIntegerAndFraction!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testInfinityAndNaN!public! !

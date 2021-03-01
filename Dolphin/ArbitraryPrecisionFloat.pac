@@ -43,7 +43,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 package classNames
 	add: #ArbitraryPrecisionFloat;
-	add: #ArbitraryPrecisionFloatForTrigonometry;
 	yourself.
 
 package methodNames
@@ -84,11 +83,6 @@ package!
 
 Number subclass: #ArbitraryPrecisionFloat
 	instanceVariableNames: 'nBits mantissa biasedExponent'
-	classVariableNames: ''
-	poolDictionaries: ''
-	classInstanceVariableNames: ''!
-ArbitraryPrecisionFloat subclass: #ArbitraryPrecisionFloatForTrigonometry
-	instanceVariableNames: 'pi'
 	classVariableNames: ''
 	poolDictionaries: ''
 	classInstanceVariableNames: ''!
@@ -580,7 +574,7 @@ arcCos
 	"Evaluate the arc cosine of the receiver."
 
 	| arcCos x one |
-	self isZero ifTrue: [^(self pi timesTwoPower: -1)].
+	self isZero ifTrue: [^self halfPi].
 	x := self asArbitraryPrecisionFloatNumBits: 16 + nBits.
 	x inPlaceAbs.
 	one := x one.
@@ -620,7 +614,7 @@ arcSin
 	one := x one.
 	x > one ifTrue: [self error: 'cannot compute arcSin of a number greater than 1'].
 	arcSin := x = one
-		ifTrue: [self pi timesTwoPower: -1]
+		ifTrue: [self halfPi]
 		ifFalse: [self exponent * -4 >= nBits
 			ifTrue: [x powerExpansionArcSinPrecision: x numBits]
 			ifFalse: [(x / (one - x squared) sqrt) arcTan]].
@@ -636,7 +630,7 @@ arcTan
 		ifTrue:
 			[x := self asArbitraryPrecisionFloatNumBits: nBits * 2 + 2.
 			x inPlaceAbs.
-			arcTan := (x pi timesTwoPower: -1) - x reciprocal arcTan]
+			arcTan := self halfPi - x reciprocal arcTan]
 		ifFalse:
 			[power := ((nBits bitShift: -1) + self exponent max: 4) highBit.
 			x := self asArbitraryPrecisionFloatNumBits: nBits + (1 bitShift: 1 + power).
@@ -659,8 +653,8 @@ arcTan: denominator
 				ifFalse: [ (self + denominator) pi negated ]]]
 		ifFalse: [denominator isZero
 			ifTrue: [self positive
-				ifTrue: [ (self + denominator) pi timesTwoPower: -1 ]
-				ifFalse: [ (self + denominator) pi negated timesTwoPower: -1 ]]
+				ifTrue: [ (self + denominator) halfPi ]
+				ifFalse: [ (self + denominator) halfPi negated ]]
 			ifFalse:
 				[ | precision arcTan |
 				precision := (self + denominator) numBits.
@@ -875,12 +869,36 @@ copy
 	^self shallowCopy!
 
 cos
-	"Answer the cosine of the receiver."
+	"Evaluate the cosine of the receiver"
 
-	^(ArbitraryPrecisionFloatForTrigonometry
-		mantissa: mantissa
-		exponent: biasedExponent
-		nBits: nBits) cos!
+	| pi halfPi quarterPi x neg |
+	x := self moduloNegPiToPi: [:piApproximation | pi := piApproximation].
+	x inPlaceAbs.
+	halfPi := pi timesTwoPower: -1.
+	(neg := x > halfPi) ifTrue: [x inPlaceSubtract: pi; inPlaceNegated].
+	quarterPi := halfPi timesTwoPower: -1.
+	x > quarterPi
+		ifTrue:
+			[x inPlaceSubtract: halfPi; inPlaceNegated.
+			x := self sin: x]
+		ifFalse: [x := self cos: x].
+	neg ifTrue: [x inPlaceNegated].
+	^x asArbitraryPrecisionFloatNumBits: nBits!
+
+cos: x
+	"Evaluate the cosine of x by recursive cos(2x) formula and power series expansion.
+	Note that it is better to use this method with x <= pi/4."
+	
+	| one cos fraction power |
+	x isZero ifTrue: [^x one].
+	power := ((nBits bitShift: -1) + x exponent max: 0) highBit.
+	fraction := x timesTwoPower: power negated.
+	cos := fraction powerExpansionCosPrecision: nBits + (1 bitShift: 1 + power).
+	one := x one.
+	power timesRepeat:
+		["Evaluate cos(2x)=2 cos(x)^2-1"
+		cos inPlaceMultiplyBy: cos; inPlaceTimesTwoPower: 1; inPlaceSubtract: one].
+	^cos!
 
 cosh
 	"Answer the hyperbolic cosine of the receiver."
@@ -1005,6 +1023,11 @@ greaterThanFraction: aFraction
 
 greaterThanInteger: anInteger
 	^self asTrueFraction > anInteger!
+
+halfPi
+	"Answer the value of half pi rounded to nBits"
+
+	^self pi timesTwoPower: -1!
 
 hash
 	"Hash is reimplemented because = is implemented."
@@ -1251,23 +1274,37 @@ mantissa: m exponent: e nBits: n
 	self round!
 
 moduloNegPiToPi
-	"answer a copy of the receiver modulo 2*pi, with doubled precision"
+	"Answer a copy of the receiver modulo 2*pi, with roughly doubled precision.
+	Note: the trailing bits past double precision are not guaranteed to be exactly rounded"
 
-	| x pi twoPi quo |
-	x := (self asArbitraryPrecisionFloatNumBits: nBits * 2).
-	self negative ifTrue: [x inPlaceNegated].
+	^self moduloNegPiToPi: [:piApproximationForReduction | ]!
+
+moduloNegPiToPi: piBlock
+	"Answer a copy of the receiver modulo 2*pi, with doubled precision.
+	Evaluate piBlock with the appropriate approximation of pi used for the reduction."
+
+	| x quo pi twoPi |
+	x := (ArbitraryPrecisionFloat
+		mantissa: mantissa abs
+		exponent: biasedExponent
+		nBits: nBits * 2 + 16).
 	pi := x pi.
 	twoPi := pi timesTwoPower: 1.
 	x > pi ifTrue:
 		[quo := x + pi quo: twoPi.
-		quo highBitOfMagnitude > nBits ifTrue:
-			[x := (self abs asArbitraryPrecisionFloatNumBits: nBits + quo highBitOfMagnitude).
+		quo highBit * 2 > nBits ifTrue:
+			["we need extra precision because of multiplication with high magnitude quo"
+			x := (ArbitraryPrecisionFloat
+				mantissa: mantissa abs
+				exponent: biasedExponent
+				nBits: nBits * 3 // 2 + quo highBit + 16).
 			pi := x pi.
 			twoPi := pi timesTwoPower: 1.
 			quo := x + pi quo: twoPi].
-		x inPlaceSubtract: twoPi * quo.
-		self negative ifTrue: [x inPlaceNegated]].
-	^x asArbitraryPrecisionFloatNumBits: nBits * 2!
+		x inPlaceSubtract: twoPi * quo].
+	self negative ifTrue: [x inPlaceNegated].
+	piBlock value: pi.
+	^x asArbitraryPrecisionFloatNumBits: nBits * 2 + 16!
 
 multiplyByFloat: aFloat
 	"Private - Answer the result of multiplying the known Float, aFloat,
@@ -1850,20 +1887,79 @@ significandAsInteger
 	^mantissa abs!
 
 sin
-	"Answer the sine of the receiver."
+	"Evaluate the sine of the receiver"
 
-	^(ArbitraryPrecisionFloatForTrigonometry
-		mantissa: mantissa
-		exponent: biasedExponent
-		nBits: nBits) sin!
+	| pi halfPi quarterPi x neg |
+	x := self moduloNegPiToPi: [:piApproximation | pi := piApproximation].
+	neg := x negative.
+	x inPlaceAbs.
+	halfPi := pi timesTwoPower: -1.
+	x > halfPi ifTrue: [x inPlaceSubtract: pi; inPlaceNegated].
+	quarterPi := halfPi timesTwoPower: -1.
+	x > quarterPi
+		ifTrue:
+			[x inPlaceSubtract: halfPi; inPlaceNegated.
+			x := self cos: x]
+		ifFalse: [x := self sin: x].
+	neg ifTrue: [x inPlaceNegated].
+	^x asArbitraryPrecisionFloatNumBits: nBits!
+
+sin: x
+	"Evaluate the sine of x by sin(5x) formula and power series expansion."
+	
+	| sin sin2 sin4 fifth five |
+	x isZero ifTrue: [^x zero].
+	five := 5 asArbitraryPrecisionFloatNumBits: x numBits.
+	fifth := x / five.
+	sin := fifth powerExpansionSinPrecision: nBits + 8.
+	sin2 := sin squared.
+	sin2 inPlaceTimesTwoPower: 2.
+	sin4 := sin2 squared.
+	sin2 inPlaceMultiplyBy: five.
+	^sin4
+		inPlaceSubtract: sin2;
+		inPlaceAdd: five;
+		inPlaceMultiplyBy: sin;
+		yourself!
 
 sincos
-	"Answer an Array with the sine and cosine of the receiver."
+	"Evaluate the sine and cosine of the receiver"
 
-	^(ArbitraryPrecisionFloatForTrigonometry
-		mantissa: mantissa
-		exponent: biasedExponent
-		nBits: nBits) sincos!
+	| pi halfPi quarterPi x sincos sinneg cosneg |
+	x := self moduloNegPiToPi: [:piApproximation | pi := piApproximation].
+	sinneg := x negative.
+	x inPlaceAbs.
+	halfPi := pi timesTwoPower: -1.
+	(cosneg := x > halfPi) ifTrue: [x inPlaceSubtract: pi; inPlaceNegated].
+	quarterPi := halfPi timesTwoPower: -1.
+	x > quarterPi
+		ifTrue:
+			[x inPlaceSubtract: halfPi; inPlaceNegated.
+			sincos := (self sincos: x) reversed]
+		ifFalse:
+			[sincos := self sincos: x].
+	sinneg ifTrue: [sincos first inPlaceNegated].
+	cosneg ifTrue: [sincos last inPlaceNegated].
+	^sincos collect: [:e | e asArbitraryPrecisionFloatNumBits: nBits]!
+
+sincos: x
+	"Evaluate the sine and cosine of x by recursive sin(2x) and cos(2x) formula and power series expansion.
+	Note that it is better to use this method with x <= pi/4."
+	
+	| one sin cos sincos fraction power |
+	x isZero ifTrue: [^Array with: x zero with: x one].
+	power := ((nBits bitShift: -1) + x exponent max: 0) highBit.
+	fraction := x timesTwoPower: power negated.
+	sincos := fraction powerExpansionSinCosPrecision: nBits + (1 bitShift: 1 + power).
+	sin := sincos first.
+	cos := sincos last.
+	one := x one.
+	power timesRepeat:
+		["Evaluate sin(2x)=2 sin(x) cos(x)"
+		sin inPlaceMultiplyBy: cos; inPlaceTimesTwoPower: 1.
+		"Evaluate cos(2x)=2 cos(x)^2-1"
+		cos inPlaceMultiplyBy: cos; inPlaceTimesTwoPower: 1; inPlaceSubtract: one].
+	^sincos!
 
 sinh
 	"Answer the hyperbolic sine of the receiver."
@@ -1954,12 +2050,31 @@ subtractFromFloat: aFloat
 !
 
 tan
-	"Answer the tangent of the receiver."
+	"Evaluate the tangent of the receiver"
 
-	^(ArbitraryPrecisionFloatForTrigonometry
-		mantissa: mantissa
-		exponent: biasedExponent
-		nBits: nBits) tan!
+	| pi halfPi quarterPi x sincos neg tan |
+	x := self moduloNegPiToPi: [:piApproximation | pi := piApproximation].
+	neg := x negative.
+	x inPlaceAbs.
+	halfPi := pi timesTwoPower: -1.
+	(x > halfPi)
+		ifTrue:
+			[x inPlaceSubtract: pi; inPlaceNegated.
+			neg := neg not].
+	x exponent * -4 >= nBits
+		ifTrue: [tan := x powerExpansionTanPrecision: x numBits]
+		ifFalse:
+			[quarterPi := halfPi timesTwoPower: -1.
+			x > quarterPi
+				ifTrue:
+					[x inPlaceSubtract: halfPi; inPlaceNegated.
+					sincos := (self sincos: x) reversed]
+				ifFalse:
+					[sincos := self sincos: x].
+			sincos first inPlaceDivideBy: sincos last.
+			tan := sincos first].
+	neg ifTrue: [tan inPlaceNegated].
+	^tan asArbitraryPrecisionFloatNumBits: nBits!
 
 tanh
 	"Answer the hyperbolic tangent of the receiver."
@@ -2033,6 +2148,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #coerce:!coercing!private! !
 !ArbitraryPrecisionFloat categoriesFor: #copy!copying!public! !
 !ArbitraryPrecisionFloat categoriesFor: #cos!mathematical!public! !
+!ArbitraryPrecisionFloat categoriesFor: #cos:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #cosh!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #digitCompare:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #divideIntoFloat:!double dispatch!private! !
@@ -2043,6 +2159,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #greaterThanFloat:!double dispatch!private! !
 !ArbitraryPrecisionFloat categoriesFor: #greaterThanFraction:!double dispatch!private! !
 !ArbitraryPrecisionFloat categoriesFor: #greaterThanInteger:!double dispatch!private! !
+!ArbitraryPrecisionFloat categoriesFor: #halfPi!constants!public! !
 !ArbitraryPrecisionFloat categoriesFor: #hash!comparing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceAbs!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceAdd:!private! !
@@ -2062,7 +2179,8 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #ln!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #mantissa!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #mantissa:exponent:nBits:!initialize/release!public! !
-!ArbitraryPrecisionFloat categoriesFor: #moduloNegPiToPi!public! !
+!ArbitraryPrecisionFloat categoriesFor: #moduloNegPiToPi!private! !
+!ArbitraryPrecisionFloat categoriesFor: #moduloNegPiToPi:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #multiplyByFloat:!double dispatch!private! !
 !ArbitraryPrecisionFloat categoriesFor: #naiveRaisedToInteger:!public! !
 !ArbitraryPrecisionFloat categoriesFor: #negated!arithmetic!public! !
@@ -2073,8 +2191,8 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #normalize!private! !
 !ArbitraryPrecisionFloat categoriesFor: #numBits!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #numBitsInMantissa!accessing!public! !
-!ArbitraryPrecisionFloat categoriesFor: #one!arithmetic!public! !
-!ArbitraryPrecisionFloat categoriesFor: #pi!arithmetic!public! !
+!ArbitraryPrecisionFloat categoriesFor: #one!constants!public! !
+!ArbitraryPrecisionFloat categoriesFor: #pi!constants!public! !
 !ArbitraryPrecisionFloat categoriesFor: #positive!public!testing! !
 !ArbitraryPrecisionFloat categoriesFor: #powerExpansionArCoshp1Precision:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #powerExpansionArcSinPrecision:!private! !
@@ -2106,7 +2224,9 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #signBit!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #significandAsInteger!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #sin!mathematical!public! !
+!ArbitraryPrecisionFloat categoriesFor: #sin:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #sincos!mathematical!public! !
+!ArbitraryPrecisionFloat categoriesFor: #sincos:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #sinh!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #sqrt!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #squared!public! !
@@ -2117,7 +2237,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #timesTwoPower:!arithmetic!public! !
 !ArbitraryPrecisionFloat categoriesFor: #truncate!private! !
 !ArbitraryPrecisionFloat categoriesFor: #truncated!converting!public! !
-!ArbitraryPrecisionFloat categoriesFor: #zero!arithmetic!public! !
+!ArbitraryPrecisionFloat categoriesFor: #zero!constants!public! !
 
 !ArbitraryPrecisionFloat class methodsFor!
 
@@ -2127,186 +2247,6 @@ mantissa: mantisInteger exponent: expoInteger nBits: nbitsInteger
 		exponent: expoInteger
 		nBits: nbitsInteger! !
 !ArbitraryPrecisionFloat class categoriesFor: #mantissa:exponent:nBits:!instance creation!public! !
-
-ArbitraryPrecisionFloatForTrigonometry guid: (GUID fromString: '{3eea7d3a-e96c-4ebd-8def-8a4b258f21da}')!
-ArbitraryPrecisionFloatForTrigonometry comment: ''!
-!ArbitraryPrecisionFloatForTrigonometry categoriesForClass!Unclassified! !
-!ArbitraryPrecisionFloatForTrigonometry methodsFor!
-
-cos
-	"Evaluate the cosine of the receiver"
-
-	| halfPi quarterPi x neg |
-	x := self moduloNegPiToPi.
-	x inPlaceAbs.
-	halfPi := pi timesTwoPower: -1.
-	(neg := x > halfPi) ifTrue: [x inPlaceSubtract: pi; inPlaceNegated].
-	quarterPi := halfPi timesTwoPower: -1.
-	x > quarterPi
-		ifTrue:
-			[x inPlaceSubtract: halfPi; inPlaceNegated.
-			x := self sin: x]
-		ifFalse: [x := self cos: x].
-	neg ifTrue: [x inPlaceNegated].
-	^x asArbitraryPrecisionFloatNumBits: nBits!
-
-cos: x
-	"Evaluate the cosine of x by recursive cos(2x) formula and power series expansion.
-	Note that it is better to use this method with x <= pi/4."
-	
-	| one cos fraction power |
-	x isZero ifTrue: [^x one].
-	power := ((nBits bitShift: -1) + x exponent max: 0) highBit.
-	fraction := x timesTwoPower: power negated.
-	cos := fraction powerExpansionCosPrecision: nBits + (1 bitShift: 1 + power).
-	one := x one.
-	power timesRepeat:
-		["Evaluate cos(2x)=2 cos(x)^2-1"
-		cos inPlaceMultiplyBy: cos; inPlaceTimesTwoPower: 1; inPlaceSubtract: one].
-	^cos!
-
-moduloNegPiToPi
-	"answer a copy of the receiver modulo 2*pi, with doubled precision"
-
-	| x quo twoPi |
-	x := (ArbitraryPrecisionFloat
-		mantissa: mantissa abs
-		exponent: biasedExponent
-		nBits: nBits * 2 + 16).
-	pi := x pi.
-	twoPi := pi timesTwoPower: 1.
-	x > pi ifTrue:
-		[quo := x + pi quo: twoPi.
-		quo highBit * 2 > nBits ifTrue:
-			[x := (ArbitraryPrecisionFloat
-				mantissa: mantissa abs
-				exponent: biasedExponent
-				nBits: nBits * 3 // 2 + quo highBit + 16).
-			pi := x pi.
-			twoPi := pi timesTwoPower: 1.
-			quo := x + pi quo: twoPi].
-		x inPlaceSubtract: twoPi * quo].
-	self negative ifTrue: [x inPlaceNegated].
-	^x asArbitraryPrecisionFloatNumBits: nBits * 2 + 16!
-
-pi
-	"Answer an approximation of pi with doubled precision."
-
-	^pi ifNil: [ pi := (ArbitraryPrecisionFloat
-		mantissa: 0
-		exponent: 0
-		nBits: nBits * 2 + 2) pi ]!
-
-sin
-	"Evaluate the sine of the receiver"
-
-	| halfPi quarterPi x neg |
-	x := self moduloNegPiToPi.
-	neg := x negative.
-	x inPlaceAbs.
-	halfPi := pi timesTwoPower: -1.
-	x > halfPi ifTrue: [x inPlaceSubtract: pi; inPlaceNegated].
-	quarterPi := halfPi timesTwoPower: -1.
-	x > quarterPi
-		ifTrue:
-			[x inPlaceSubtract: halfPi; inPlaceNegated.
-			x := self cos: x]
-		ifFalse: [x := self sin: x].
-	neg ifTrue: [x inPlaceNegated].
-	^x asArbitraryPrecisionFloatNumBits: nBits!
-
-sin: x
-	"Evaluate the sine of x by sin(5x) formula and power series expansion."
-	
-	| sin sin2 sin4 fifth five |
-	x isZero ifTrue: [^x zero].
-	five := 5 asArbitraryPrecisionFloatNumBits: x numBits.
-	fifth := x / five.
-	sin := fifth powerExpansionSinPrecision: nBits + 8.
-	sin2 := sin squared.
-	sin2 inPlaceTimesTwoPower: 2.
-	sin4 := sin2 squared.
-	sin2 inPlaceMultiplyBy: five.
-	^sin4
-		inPlaceSubtract: sin2;
-		inPlaceAdd: five;
-		inPlaceMultiplyBy: sin;
-		yourself!
-
-sincos
-	"Evaluate the sine and cosine of the receiver"
-
-	| halfPi quarterPi x sincos sinneg cosneg |
-	x := self moduloNegPiToPi.
-	sinneg := x negative.
-	x inPlaceAbs.
-	halfPi := pi timesTwoPower: -1.
-	(cosneg := x > halfPi) ifTrue: [x inPlaceSubtract: pi; inPlaceNegated].
-	quarterPi := halfPi timesTwoPower: -1.
-	x > quarterPi
-		ifTrue:
-			[x inPlaceSubtract: halfPi; inPlaceNegated.
-			sincos := (self sincos: x) reverse]
-		ifFalse:
-			[sincos := self sincos: x].
-	sinneg ifTrue: [sincos first inPlaceNegated].
-	cosneg ifTrue: [sincos last inPlaceNegated].
-	^sincos collect: [:e | e asArbitraryPrecisionFloatNumBits: nBits]!
-
-sincos: x
-	"Evaluate the sine and cosine of x by recursive sin(2x) and cos(2x) formula and power series expansion.
-	Note that it is better to use this method with x <= pi/4."
-	
-	| one sin cos sincos fraction power |
-	x isZero ifTrue: [^Array with: x zero with: x one].
-	power := ((nBits bitShift: -1) + x exponent max: 0) highBit.
-	fraction := x timesTwoPower: power negated.
-	sincos := fraction powerExpansionSinCosPrecision: nBits + (1 bitShift: 1 + power).
-	sin := sincos first.
-	cos := sincos last.
-	one := x one.
-	power timesRepeat:
-		["Evaluate sin(2x)=2 sin(x) cos(x)"
-		sin inPlaceMultiplyBy: cos; inPlaceTimesTwoPower: 1.
-		"Evaluate cos(2x)=2 cos(x)^2-1"
-		cos inPlaceMultiplyBy: cos; inPlaceTimesTwoPower: 1; inPlaceSubtract: one].
-	^sincos!
-
-tan
-	"Evaluate the tangent of the receiver"
-
-	| halfPi quarterPi x sincos neg tan |
-	x := self moduloNegPiToPi.
-	neg := x negative.
-	x inPlaceAbs.
-	halfPi := pi timesTwoPower: -1.
-	(x > halfPi)
-		ifTrue:
-			[x inPlaceSubtract: pi; inPlaceNegated.
-			neg := neg not].
-	x exponent * -4 >= nBits
-		ifTrue: [tan := x powerExpansionTanPrecision: x numBits]
-		ifFalse:
-			[quarterPi := halfPi timesTwoPower: -1.
-			x > quarterPi
-				ifTrue:
-					[x inPlaceSubtract: halfPi; inPlaceNegated.
-					sincos := (self sincos: x) reverse]
-				ifFalse:
-					[sincos := self sincos: x].
-			sincos first inPlaceDivideBy: sincos last.
-			tan := sincos first].
-	neg ifTrue: [tan inPlaceNegated].
-	^tan asArbitraryPrecisionFloatNumBits: nBits! !
-!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #cos!mathematical!public! !
-!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #cos:!private! !
-!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #moduloNegPiToPi!public! !
-!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #pi!public! !
-!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #sin!mathematical!public! !
-!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #sin:!private! !
-!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #sincos!mathematical!public! !
-!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #sincos:!private! !
-!ArbitraryPrecisionFloatForTrigonometry categoriesFor: #tan!mathematical!public! !
 
 "Binary Globals"!
 
