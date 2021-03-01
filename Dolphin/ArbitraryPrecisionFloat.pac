@@ -1887,6 +1887,24 @@ printOn: aStream showingDecimalPlaces: placesDesired
 			[self negative ifTrue: [aStream nextPutAll: '-'].
 			self absPrintExactlyOn: aStream base: 10 decimalPlaces: placesDesired showTrailingFractionalZeros: true]!
 
+raisedTo: operand
+	"Answer a <number> which is the receiver raised to the power of 
+	the <number> argument, operand."
+
+	| prec |
+	self = self one ifTrue: [^self].
+	operand isInteger ifTrue: [^self raisedToInteger: operand].
+	self isZero ifTrue: [^operand <= 0 ifTrue: [self error: 'Invalid operands'] ifFalse: [self]].
+	self negative ifTrue: [self error: 'Invalid operands'].
+	"use double  precision for faithful rounding"
+	prec := nBits * 2 + 16.
+	operand isFloat
+		ifTrue:
+			[operand isNaN ifTrue: [^operand].
+			operand isFinite ifFalse: [^operand positive ifTrue: [operand] ifFalse: [self zero]].
+			prec := prec max: operand class precision * 2 + 16].
+	operand class = self class ifTrue: [prec := prec max: operand precision * 2 + 16].
+	^((self asArbitraryPrecisionFloatNumBits: prec) ln * (operand asArbitraryPrecisionFloatNumBits: prec)) exp!
 
 raisedToInteger: anInteger 
 	| bitProbe highPrecisionSelf n result |
@@ -2298,7 +2316,8 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #printOn:base:!printing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #printOn:maxDecimalPlaces:!printing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #printOn:showingDecimalPlaces:!printing!public! !
-!ArbitraryPrecisionFloat categoriesFor: #raisedToInteger:!public! !
+!ArbitraryPrecisionFloat categoriesFor: #raisedTo:!mathematical!public! !
+!ArbitraryPrecisionFloat categoriesFor: #raisedToInteger:!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #reciprocal!arithmetic!public! !
 !ArbitraryPrecisionFloat categoriesFor: #reduce!private! !
 !ArbitraryPrecisionFloat categoriesFor: #round!private! !
