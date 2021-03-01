@@ -473,6 +473,16 @@ testHalfPi
 	halfPi := one halfPi.
 	self assert: halfPi + halfPi = pi!
 
+testHardestToRoundPower
+	"This is an extremely hard to round value because very near to exact tie.
+	(notice the 59 consecutives zeroes of highPrecisionResult after bit #54)
+	Example taken from http://perso.ens-lyon.fr/jean-michel.muller/Conf-Journees-Knuth.pdf"
+	| highPrecisionResult pow x |
+	x := 2r1.0100010111101011011011101010011111100101000111011101.
+	pow := 51.
+	highPrecisionResult := 2r1.1011001110100100011100100001100100000101101011101110100000000000000000000000000000000000000000000000000000000000100e17.
+	self assert: ((x asArbitraryPrecisionFloatNumBits: Float precision) raisedTo: pow) = highPrecisionResult.!
+
 testIEEEArithmeticVersusFloat
 	| floats ops ref new |
 	floats := #(1.0 2.0 3.0 5.0 10.0 0.5 0.25 1.0e60 0.1 1.1e-30 1.0e-60) asOrderedCollection.
@@ -862,6 +872,7 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #testExpLn!public!testing-functions! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testGreaterThan!public!testing-compare! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testHalfPi!public! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testHardestToRoundPower!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testIEEEArithmeticVersusFloat!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testIEEEArithmeticVersusIntegerAndFraction!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testInfinityAndNaN!public! !
