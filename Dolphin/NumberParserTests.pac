@@ -1,4 +1,4 @@
-| package |
+﻿| package |
 package := Package name: 'NumberParserTests'.
 package paxVersion: 1;
 	basicComment: 'Hold the tests for NumberParser'.
@@ -15,11 +15,11 @@ package binaryGlobalNames: (Set new
 package globalAliases: (Set new
 	yourself).
 
-package setPrerequisites: (IdentitySet new
-	add: '..\..\..\Core\Object Arts\Dolphin\Base\Dolphin';
-	add: 'NumberParser';
-	add: '..\..\..\Core\Contributions\Camp Smalltalk\SUnit\SUnit';
-	yourself).
+package setPrerequisites: #(
+	'..\..\..\Core\Object Arts\Dolphin\Base\Dolphin'
+	'..\..\..\Core\Object Arts\Dolphin\System\Random\Dolphin Random Stream'
+	'NumberParser'
+	'..\..\..\Core\Contributions\Camp Smalltalk\SUnit\SUnit').
 
 package!
 
@@ -47,7 +47,7 @@ TestCase subclass: #SqNumberParserTest
 
 "Classes"!
 
-FORTRANNumberParserTest guid: (GUID fromString: '{890CFC1F-59BF-4468-9B50-EDA60A66F94D}')!
+FORTRANNumberParserTest guid: (GUID fromString: '{890cfc1f-59bf-4468-9b50-eda60a66f94d}')!
 FORTRANNumberParserTest comment: ''!
 !FORTRANNumberParserTest categoriesForClass!Unclassified! !
 !FORTRANNumberParserTest methodsFor!
@@ -92,7 +92,7 @@ testInteger
 !FORTRANNumberParserTest categoriesFor: #testFloat!public! !
 !FORTRANNumberParserTest categoriesFor: #testInteger!public! !
 
-SqNumberParserTest guid: (GUID fromString: '{BD41DE41-0235-48A7-896C-DF79CA415EA5}')!
+SqNumberParserTest guid: (GUID fromString: '{bd41de41-0235-48a7-896c-df79ca415ea5}')!
 SqNumberParserTest comment: ''!
 !SqNumberParserTest categoriesForClass!Unclassified! !
 !SqNumberParserTest methodsFor!
@@ -191,7 +191,7 @@ testFloatPrintString
 						str := (String new: 64) writeStream.
 						f negative ifTrue: [str nextPut: $-].
 						str print: base; nextPut: $r.
-						f abs printOn: str significantFigures: 20.
+						f abs absPrintExactlyOn: str base: base.
 						self assert: (SqueakNumberParser parse: str contents) = f]].
 	"test big num near infinity"
 	10
@@ -203,7 +203,7 @@ testFloatPrintString
 						str := (String new: 64) writeStream.
 						f negative ifTrue: [str nextPut: $-].
 						str print: base; nextPut: $r.
-						f abs printOn: str significantFigures: 20.
+						f abs absPrintExactlyOn: str base: base.
 						self assert: (SqueakNumberParser parse: str contents) = f]].
 	"test infinitesimal (gradual underflow)"
 	10
@@ -215,7 +215,7 @@ testFloatPrintString
 						str := (String new: 64) writeStream.
 						f negative ifTrue: [str nextPut: $-].
 						str print: base; nextPut: $r.
-						f abs printOn: str significantFigures: 20.
+						f abs absPrintExactlyOn: str base: base.
 						self assert: (SqueakNumberParser parse: str contents) = f]].!
 
 testFloatReadError
