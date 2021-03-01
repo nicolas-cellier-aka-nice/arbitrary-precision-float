@@ -630,7 +630,7 @@ arcTan
 		ifTrue:
 			[x := self asArbitraryPrecisionFloatNumBits: nBits * 2 + 2.
 			x inPlaceAbs.
-			arcTan := self halfPi - x reciprocal arcTan]
+			arcTan := x halfPi - x reciprocal arcTan]
 		ifFalse:
 			[power := ((nBits bitShift: -1) + self exponent max: 4) highBit.
 			x := self asArbitraryPrecisionFloatNumBits: nBits + (1 bitShift: 1 + power).
