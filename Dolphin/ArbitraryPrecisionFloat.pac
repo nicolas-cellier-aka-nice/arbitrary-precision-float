@@ -6,6 +6,8 @@ package paxVersion: 1;
 It can do arithmetic with other numbers and use IEEE rounding to nearest even mode.
 
 It has no limit on the exponent, except memory limitations of the VM of course.
+It thus does not handle overflow nor underflow.
+Thus ArbitraryPrecisionFloat does not have any infinity nor NaN, nor denormals.
 
 Implementation is based on Smalltalk LargeInteger arithmetic.
 The class is composed of 3 instance variables which should be integer:
@@ -15,6 +17,7 @@ The class is composed of 3 instance variables which should be integer:
     * and number of bits.
 
 The sign is stored in the mantissa.
+Since there is no Integer negativeZero,  ArbitraryPrecisionFloat also does not support negativeZero constant.
 
 Note that modern implementations of multiple precision packages use array of floating point storage for efficiency.
 Also, as far as i know, Smalltalk LargeInteger multiplication is not optimized (it is a naive n*n implementation, not a n*log(n) as could give a FFT)
@@ -22,22 +25,26 @@ So don''t expect the ultimate performance of this package.
 Take it for what it is worth : a very easy to program and extend framework thanks to the Smalltalk language.
 It will eventually improve in the future.
 
-Only a few functions are implemented by now: exp ln sqrt sin cos tan.
+Only a few functions are implemented by now:
+- exp ln sqrt log log2 log:
+- trigonometric (sin cos tan)
+- inverse tirgonometric (arcSin arcCos arcTan)
+- hyperbolic (sinh cosh tanh)
+- inverse hyperbolic (arSinh arCosh arTanh)
+- error function (erf).
 Also the rounded value of pi can be computed.
-TODO: implement arbitrary precision other usual functions (like arcSin, arcCos, ...).
 
 Note: this package has been published in Squeak source and Visualworks public store.
 
 License is MIT
 
-Copyright (c) <2006-2010> <Nicolas Cellier>
+Copyright (c) <2006-2021> <Nicolas Cellier>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
  '.
 
 
