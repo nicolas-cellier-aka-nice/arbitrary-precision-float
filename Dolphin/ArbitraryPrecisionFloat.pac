@@ -1935,7 +1935,7 @@ sincos
 	x > quarterPi
 		ifTrue:
 			[x inPlaceSubtract: halfPi; inPlaceNegated.
-			sincos := (self sincos: x) reversed]
+			sincos := (self sincos: x) reverse]
 		ifFalse:
 			[sincos := self sincos: x].
 	sinneg ifTrue: [sincos first inPlaceNegated].
@@ -2068,7 +2068,7 @@ tan
 			x > quarterPi
 				ifTrue:
 					[x inPlaceSubtract: halfPi; inPlaceNegated.
-					sincos := (self sincos: x) reversed]
+					sincos := (self sincos: x) reverse]
 				ifFalse:
 					[sincos := self sincos: x].
 			sincos first inPlaceDivideBy: sincos last.
