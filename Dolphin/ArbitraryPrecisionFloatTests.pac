@@ -1,4 +1,4 @@
-| package |
+﻿| package |
 package := Package name: 'ArbitraryPrecisionFloatTests'.
 package paxVersion: 1;
 	basicComment: 'Hold the tests for ArbitraryPrecisionFloat'.
@@ -14,10 +14,9 @@ package binaryGlobalNames: (Set new
 package globalAliases: (Set new
 	yourself).
 
-package setPrerequisites: (IdentitySet new
-	add: '..\..\..\Core\Object Arts\Dolphin\Base\Dolphin';
-	add: '..\..\..\Core\Contributions\Camp Smalltalk\SUnit\SUnit';
-	yourself).
+package setPrerequisites: #(
+	'..\..\..\Core\Object Arts\Dolphin\Base\Dolphin'
+	'..\..\..\Core\Contributions\Camp Smalltalk\SUnit\SUnit').
 
 package!
 
@@ -40,7 +39,7 @@ TestCase subclass: #ArbitraryPrecisionFloatTest
 
 "Classes"!
 
-ArbitraryPrecisionFloatTest guid: (GUID fromString: '{642E6D3F-8269-423C-8A82-B8C013E2C79E}')!
+ArbitraryPrecisionFloatTest guid: (GUID fromString: '{642e6d3f-8269-423c-8a82-b8c013e2c79e}')!
 ArbitraryPrecisionFloatTest comment: 'Test to check FloatingPoint numbers with arbitrary precision'!
 !ArbitraryPrecisionFloatTest categoriesForClass!Unclassified! !
 !ArbitraryPrecisionFloatTest methodsFor!
@@ -217,6 +216,26 @@ testAsFloatWithUnderflowAndExcessPrecision
 	expected := Float fminNormalized.
 	self assert: exactTie asFloat = expected.
 	self assert: exactTie negated asFloat = expected negated!
+
+testAsMinimalDecimalFraction
+	| emax emin leadingOne significands |
+	significands := 0 to: 1<<10-1.
+	leadingOne := 1<<10.
+	emin := -14.
+	emax := 15.
+	
+	"Test all normal finite half precision float"
+	emin to: emax do: [:e | 
+		significands do: [:s |
+			| f |
+			f := (leadingOne + s asArbitraryPrecisionFloatNumBits: 11) timesTwoPower: e - 10.
+			self assert: (f asMinimalDecimalFraction asArbitraryPrecisionFloatNumBits: 11) = f]].
+	
+	"Test all subnormal finite half precision float"
+	significands do: [:s |
+		| f |
+		f := (s asArbitraryPrecisionFloatNumBits: s highBit) timesTwoPower: emin - 10.
+		self assert: (f asMinimalDecimalFraction asArbitraryPrecisionFloatNumBits: s highBit) = f].!
 
 testCoercingDivide
 	(Array with: 1/2 with: 0.5e0 with: 0.5s1) do: [:heteroHalf |
@@ -737,6 +756,7 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #testAsFloat!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testAsFloatWithUnderflow!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testAsFloatWithUnderflowAndExcessPrecision!public! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testAsMinimalDecimalFraction!public!testing-trigonometry! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testCoercingDivide!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testCoercingEqual!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testCoercingLessThan!public!testing-arithmetic! !

@@ -1,4 +1,4 @@
-| package |
+﻿| package |
 package := Package name: 'ArbitraryPrecisionFloat'.
 package paxVersion: 1;
 	basicComment: 'ArbitraryPrecisionFloat is an implementation of Floating Point Numbers with a fixed number of binary digits.
@@ -70,9 +70,8 @@ package binaryGlobalNames: (Set new
 package globalAliases: (Set new
 	yourself).
 
-package setPrerequisites: (IdentitySet new
-	add: '..\..\..\Core\Object Arts\Dolphin\Base\Dolphin';
-	yourself).
+package setPrerequisites: #(
+	'..\..\..\Core\Object Arts\Dolphin\Base\Dolphin').
 
 package!
 
@@ -258,7 +257,7 @@ asArbitraryPrecisionFloatNumBits: n
 
 "Classes"!
 
-ArbitraryPrecisionFloat guid: (GUID fromString: '{A31D459E-87E4-41E8-8EC6-05E017548CC7}')!
+ArbitraryPrecisionFloat guid: (GUID fromString: '{a31d459e-87e4-41e8-8ec6-05e017548cc7}')!
 ArbitraryPrecisionFloat comment: 'I store floating point numbers in base 2 with some arbitrary precision (arbitrary number of bits).
 I do inexact arithmetic like Float.
 But I am very slow due to emulated (Large) Integer arithmetic... (compared to IEEE 754 hardwired)
@@ -621,6 +620,92 @@ asFraction
 			mantissa is odd and cannot be reduced by a power of two.
 				mantissa / (1 bitShift: exponent negated)"
 			^ Fraction numerator: mantissa denominator: (1 bitShift: biasedExponent negated)]!
+
+asMinimalDecimalFraction
+	"Answer the shortest decimal Fraction that will equal self when converted back asFloat.
+	A decimal Fraction has only powers of 2 and 5 as denominator.
+	For example,
+	(1/10 asArbitraryPrecisionFloatNumBits: 11) ~= (1/10).
+	(1/10 asArbitraryPrecisionFloatNumBits: 11) asMinimalDecimalFraction = (1/10)."
+
+	| significand exp baseExpEstimate r s mPlus mMinus scale roundingIncludesLimits d tc1 tc2 fixedFormat decPointCount shead slowbit numerator denominator |
+	self isZero ifTrue: [^0].
+	self negative ifTrue: [^self negated asMinimalDecimalFraction negated].
+	self normalize.
+	significand := mantissa abs.
+	roundingIncludesLimits := significand even.
+	exp := biasedExponent.
+	baseExpEstimate := (self exponent * 10.0 reciprocalLogBase2 - 1.0e-10) ceiling.
+	numerator := 0.
+	denominator := 0.
+	exp >= 0
+		ifTrue:
+			[significand isPowerOfTwo
+				ifTrue:
+					[r := significand bitShift: 2 + exp.
+					s := 4.
+					mPlus := 2 * (mMinus := 1 bitShift: exp)]
+				ifFalse:
+					[r := significand bitShift: 1 + exp.
+					s := 2.
+					mPlus := mMinus := 1 bitShift: exp]]
+		ifFalse:
+			[significand isPowerOfTwo
+				ifTrue:
+					[r := significand bitShift: 2.
+					s := 1 bitShift: 2 - exp.
+					mPlus := 2.
+					mMinus := 1]
+				ifFalse:
+					[r := significand bitShift: 1.
+					s := 1 bitShift: 1 - exp.
+					mPlus := mMinus := 1]].
+	baseExpEstimate >= 0
+		ifTrue: [s := s * (10 raisedToInteger: baseExpEstimate)]
+		ifFalse:
+			[scale := 10 raisedToInteger: baseExpEstimate negated.
+			r := r * scale.
+			mPlus := mPlus * scale.
+			mMinus := mMinus * scale].
+	((r + mPlus >= s) and: [roundingIncludesLimits or: [r + mPlus > s]])
+		ifTrue: [baseExpEstimate := baseExpEstimate + 1]
+		ifFalse:
+			[r := r * 10.
+			mPlus := mPlus * 10.
+			mMinus := mMinus * 10].
+	(fixedFormat := baseExpEstimate between: -3 and: 6)
+		ifTrue:
+			[decPointCount := baseExpEstimate.
+			baseExpEstimate <= 0
+				ifTrue: [denominator := 10 raisedTo: baseExpEstimate negated]]
+		ifFalse:
+			[decPointCount := 1]. 
+	slowbit := 1 - s lowBit .
+	shead := s bitShift: slowbit.
+	[d := (r bitShift: slowbit) // shead.
+	r := r - (d * s).
+	(tc1 := (r <= mMinus) and: [roundingIncludesLimits or: [r < mMinus]]) |
+	(tc2 := (r + mPlus >= s) and: [roundingIncludesLimits or: [r + mPlus > s]])] whileFalse:
+		[numerator := 10 * numerator + d.
+		denominator := 10 * denominator.
+		r := r * 10.
+		mPlus := mPlus * 10.
+		mMinus := mMinus * 10.
+		decPointCount := decPointCount - 1.
+		decPointCount = 0 ifTrue: [denominator := 1]].
+	tc2 ifTrue:
+		[(tc1 not or: [r * 2 >= s]) ifTrue: [d := d + 1]].
+	numerator := 10 * numerator + d.
+	denominator := 10 * denominator.
+	decPointCount > 0
+		ifTrue:
+			[numerator := (10 raisedTo: decPointCount - 1) * numerator].
+			fixedFormat ifFalse:
+				[(baseExpEstimate - 1) > 0
+					ifTrue: [numerator := (10 raisedTo: baseExpEstimate - 1) * numerator]
+					ifFalse: [denominator := (10 raisedTo: 1 - baseExpEstimate) * (denominator max: 1)]].
+			denominator < 2 ifTrue: [^numerator].
+	^numerator / denominator!
 
 asTrueFraction
 	^self asFraction!
@@ -1721,6 +1806,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #asArbitraryPrecisionFloatNumBits:!converting!public! !
 !ArbitraryPrecisionFloat categoriesFor: #asFloat!converting!public! !
 !ArbitraryPrecisionFloat categoriesFor: #asFraction!converting!public! !
+!ArbitraryPrecisionFloat categoriesFor: #asMinimalDecimalFraction!converting!public! !
 !ArbitraryPrecisionFloat categoriesFor: #asTrueFraction!converting!public! !
 !ArbitraryPrecisionFloat categoriesFor: #biasedExponent!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #coerce:!coercing!private! !
@@ -1813,7 +1899,7 @@ mantissa: mantisInteger exponent: expoInteger nBits: nbitsInteger
 		nBits: nbitsInteger! !
 !ArbitraryPrecisionFloat class categoriesFor: #mantissa:exponent:nBits:!instance creation!public! !
 
-ArbitraryPrecisionFloatForTrigonometry guid: (GUID fromString: '{3EEA7D3A-E96C-4EBD-8DEF-8A4B258F21DA}')!
+ArbitraryPrecisionFloatForTrigonometry guid: (GUID fromString: '{3eea7d3a-e96c-4ebd-8def-8a4b258f21da}')!
 ArbitraryPrecisionFloatForTrigonometry comment: ''!
 !ArbitraryPrecisionFloatForTrigonometry categoriesForClass!Unclassified! !
 !ArbitraryPrecisionFloatForTrigonometry methodsFor!
