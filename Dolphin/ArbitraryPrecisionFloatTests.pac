@@ -409,6 +409,37 @@ testErf
 	serie := ((0 to: 10) , (1/10 to: 9/10 by: 1/10)) collect: [:e | e asFloat].
 	self checkDoublePrecisionSerie: serie forFunction: #erf!
 
+testExactLog
+	| powers precisions |
+	powers := (0 to: 10) asArray , #(64 421 7879).
+	precisions := #(11 53 280).
+	precisions do: [:nBits |
+		powers do: [:p | 
+			| int ff |
+			int := 10 raisedTo: p.
+			ff := int asArbitraryPrecisionFloatNumBits: nBits.
+			self assert: (ff ~= int or: [ff log = p])]]!
+
+testExactLog16
+	| powers precisions |
+	powers := (-10 to: 10) asArray , #(-2055 -540 64 421 7879).
+	precisions := #(11 53 280).
+	precisions do: [:nBits |
+		powers do: [:p | 
+			| ff |
+			ff := one timesTwoPower: p.
+			self assert: (ff log: 16) = (p / 4)]]!
+
+testExactLog2
+	| powers precisions |
+	powers := (-10 to: 10) asArray , #(-2055 -540 64 421 7879).
+	precisions := #(11 53 280).
+	precisions do: [:nBits |
+		powers do: [:p | 
+			| ff |
+			ff := one timesTwoPower: p.
+			self assert: ff log2 = p]]!
+
 testExp
 	| badExp serie |
 	serie := ((-20 to: 20) collect: [:e |e asFloat]).
@@ -555,12 +586,32 @@ testLessThan
 
 testLn
 	| badLn serie |
-	serie := ((1 to: 100) collect: [:e |e asFloat]).
+	serie := ((3 to: 103 by: 4) collect: [:e |e asFloat]).
+	serie :=  (serie reverse collect: [:e |e reciprocal]) , serie.
 	badLn := self checkDoublePrecisionSerieVsFloat: serie forFunction: #ln.
 	badLn isEmpty ifFalse: [Transcript cr; show: 'bad ln for ' , badLn printString]!
 
+testLn2
+	| precisions |
+	precisions := #(11 24 53 80 280 512).
+	precisions do: [:nBits |
+		| faithfull |
+		faithfull := (1 asArbitraryPrecisionFloatNumBits: nBits + 16 * 2) exp log2 reciprocal.
+		self assert: (1 asArbitraryPrecisionFloatNumBits: nBits) ln2 = (faithfull asArbitraryPrecisionFloatNumBits: nBits)].!
+
+testLnCloseToOne
+	| serie |
+	serie := ((1 to: 20) collect: [:p | one + (one timesTwoPower: p negated)])
+		, ((1 to: 20) collect: [:p | one - (one timesTwoPower: p negated)]).
+	self checkDoublePrecisionSerie: serie forFunction: #ln!
+
 testLnDomainError
 	self should: [(-2 asArbitraryPrecisionFloatNumBits: 24) ln] raise: Error.!
+
+testLnPowersOfTwo
+	| serie |
+	serie := (-6 to: 6) asArray , #(-999 -123 247 480 9998) collect: [:p | one timesTwoPower: p negated].
+	self checkDoublePrecisionSerie: serie forFunction: #ln!
 
 testLnVsFloat
 	1 to: 100
@@ -804,6 +855,9 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #testDivide!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testEqual!public!testing-compare! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testErf!public! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testExactLog!public! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testExactLog16!public! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testExactLog2!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testExp!public!testing-functions! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testExpLn!public!testing-functions! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testGreaterThan!public!testing-compare! !
@@ -813,8 +867,11 @@ trigonometricSerie
 !ArbitraryPrecisionFloatTest categoriesFor: #testInfinityAndNaN!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testIsZero!public!testing-compare! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testLessThan!public!testing-compare! !
-!ArbitraryPrecisionFloatTest categoriesFor: #testLn!public!testing-functions! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testLn!public! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testLn2!public! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testLnCloseToOne!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testLnDomainError!public!testing-functions! !
+!ArbitraryPrecisionFloatTest categoriesFor: #testLnPowersOfTwo!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testLnVsFloat!public! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testMultiply!public!testing-arithmetic! !
 !ArbitraryPrecisionFloatTest categoriesFor: #testNegated!public!testing-arithmetic! !

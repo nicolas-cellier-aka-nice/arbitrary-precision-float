@@ -1232,37 +1232,102 @@ isZero
 ln
 	"Answer the neperian logarithm of the receiver."
 
-	| x4 one two p res selfHighRes prec e |
-	self <= self zero ifTrue: [self error: 'ln is only defined for x > 0.0'].
-
-	one := self one.
-	self = one ifTrue: [^self zero].
-	two := one timesTwoPower: 1.
-
-	"Use Salamin algorithm (approximation is good if x is big enough)
-		x ln = Pi  / (2 * (1 agm: 4/x) ).
-	If x not big enough, compute (x timesTwoPower: p) ln - (2 ln * p)
-	if x is close to 1, better use a power expansion"
+	| e prec selfHighRes |
+	self <= self zero ifTrue: [self error: 'ln is only defined for positive number'].
+	"Use some extra precision for faithful rounding"
 	prec := nBits + 16.
+	"First profit by the cache for ln2"
 	e := self exponent.
-	e < 0 ifTrue: [e := -1 - e].
-	e > prec
-		ifTrue: [p := 0]
-		ifFalse:
-			[p := prec - e.
-			prec := prec + p highBit].
+	mantissa isPowerOfTwo ifTrue:
+		[e = 0 ifTrue: [^self zero].
+		e abs isPowerOfTwo ifTrue: [^self ln2 * e].
+		^(1 asArbitraryPrecisionFloatNumBits: prec + e abs highBit - e abs lowBit) ln2 * e asArbitraryPrecisionFloatNumBits: nBits].
+	"Else use Salamin algorithm which has good convergence when x is big.
+	if x is close to 1, however, better use a power expansion"
 	selfHighRes := self asArbitraryPrecisionFloatNumBits: prec.
-	(selfHighRes - one) exponent * -4 >= nBits ifTrue: [^(selfHighRes powerExpansionLnPrecision: prec) asArbitraryPrecisionFloatNumBits: nBits].
-	self < one ifTrue: [selfHighRes inPlaceReciprocal].	"Use ln(1/x) => - ln(x)"
+	(e abs <= 1 and: [(selfHighRes - selfHighRes one) exponent * -8 >= nBits])
+		ifTrue: [^(selfHighRes powerExpansionLnPrecision: prec) asArbitraryPrecisionFloatNumBits: nBits].
+	^(selfHighRes lnSalaminPrecision: prec) asArbitraryPrecisionFloatNumBits: nBits!
+
+ln2
+	"Hardcode the Salamin algorithm:
+	    x ln = (pi  / 2 / (1 agm: 4/x)).
+	Here we take x = (2 raisedTo: p)
+	We thus have x ln = (p * 2 ln)."
+	| p one |
+	p := nBits + 16. "use some extra precision for faithful rounding of next operations"
+	one := 1 asArbitraryPrecisionFloatNumBits: p.
+	^one halfPi / (one agm: (one timesTwoPower: 2 - p)) / p
+		asArbitraryPrecisionFloatNumBits: nBits!
+
+lnSalaminPrecision: prec
+	"Compute neperian logarithm using Salamin algorithm
+		x ln = Pi  / (2 * (1 agm: 4/x) ).
+	Above approximation is good if x is big enough.
+	If x not big enough, compute (x timesTwoPower: p) ln - (2 ln * p)"
+	| res selfHighRes one e e2 extraPrec x4 p |
+	e := self exponent.
+	e2 := e < 0 ifTrue: [e := -1 - e] ifFalse: [e].
+	e2 > prec
+		ifTrue:
+			[p := 0.
+			extraPrec := prec]
+		ifFalse:
+			[p := prec - e2.
+			extraPrec := prec + p highBit].
+	selfHighRes := self asArbitraryPrecisionFloatNumBits: extraPrec.
+	one := selfHighRes one.
+	e < 0 ifTrue: [selfHighRes inPlaceReciprocal].	"Use ln(1/x) => - ln(x)"
 	x4 := (4 asArbitraryPrecisionFloatNumBits: prec) 
 				inPlaceDivideBy: selfHighRes;
 				inPlaceTimesTwoPower: p negated.
-	res := selfHighRes pi / (one agm: x4) timesTwoPower: -1.
-	res := selfHighRes = two 
-		ifTrue: [res / (p + 1)]
-		ifFalse: [p = 0 ifTrue: [res] ifFalse: [res - ((two asArbitraryPrecisionFloatNumBits: prec) ln * p)]].
-	self < one ifTrue: [res inPlaceNegated].
-	^res asArbitraryPrecisionFloatNumBits: nBits!
+	res := selfHighRes halfPi / (one agm: x4).
+	p = 0 ifFalse: [res := res - (res ln2 * p)].
+	e < 0 ifTrue: [res inPlaceNegated].
+	^res!
+
+log
+	"Answer the base 10 logarithm of the receiver."
+
+	^self log: 10!
+
+log: base
+	"Answer the logarithm of the receiver in an arbitrary base."
+
+	| prec e selfHighRes lnBase lnSelf |
+	base = 2 ifTrue: [^self log2].
+	self <= self zero ifTrue: [self error: 'log: is only defined for positive numbers'].
+	e := self exponent.
+	prec := nBits + 16.
+	selfHighRes := self asArbitraryPrecisionFloatNumBits: prec.
+	base isPowerOfTwo
+		ifTrue:
+			["Better use a potentially exact solution"
+			^selfHighRes log2 / (base asArbitraryPrecisionFloatNumBits: prec) log2 asArbitraryPrecisionFloatNumBits: nBits].
+	lnSelf := mantissa isPowerOfTwo
+		ifTrue: [selfHighRes ln]
+		ifFalse: [(e abs <= 1 and: [(selfHighRes - selfHighRes one) exponent * -8 >= nBits])
+			ifTrue: [selfHighRes powerExpansionLnPrecision: prec]
+			ifFalse: [selfHighRes lnSalaminPrecision: prec]].
+	lnBase := (base asArbitraryPrecisionFloatNumBits: prec) lnSalaminPrecision: prec.
+	^lnSelf / lnBase asArbitraryPrecisionFloatNumBits: nBits!
+
+log2
+	"Answer the base 2 logarithm of the receiver."
+
+	| prec e selfHighRes one ln2 lnSelf |
+	self <= self zero ifTrue: [self error: 'log2 is only defined for positive number'].
+	e := self exponent.
+	mantissa isPowerOfTwo ifTrue:
+		[^e asArbitraryPrecisionFloatNumBits: nBits].
+	prec := nBits + 16.
+	selfHighRes := self asArbitraryPrecisionFloatNumBits: prec.
+	one := selfHighRes one.
+	lnSelf := (e abs <= 1 and: [(selfHighRes - one) exponent * -8 >= nBits])
+		ifTrue: [selfHighRes powerExpansionLnPrecision: prec]
+		ifFalse: [selfHighRes lnSalaminPrecision: prec].
+	ln2 := one ln2.
+	^lnSelf / ln2 asArbitraryPrecisionFloatNumBits: nBits!
 
 mantissa
 	^mantissa!
@@ -2177,6 +2242,11 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceTimesTwoPower:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #isZero!public!testing! !
 !ArbitraryPrecisionFloat categoriesFor: #ln!mathematical!public! !
+!ArbitraryPrecisionFloat categoriesFor: #ln2!constants!public! !
+!ArbitraryPrecisionFloat categoriesFor: #lnSalaminPrecision:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #log!mathematical!public! !
+!ArbitraryPrecisionFloat categoriesFor: #log:!mathematical!public! !
+!ArbitraryPrecisionFloat categoriesFor: #log2!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #mantissa!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #mantissa:exponent:nBits:!initialize/release!public! !
 !ArbitraryPrecisionFloat categoriesFor: #moduloNegPiToPi!private! !
