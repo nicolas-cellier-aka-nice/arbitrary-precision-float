@@ -53,7 +53,12 @@ package methodNames
 	add: #ArithmeticValue -> #greaterThanArbitraryPrecisionFloat:;
 	add: #ArithmeticValue -> #multiplyByArbitraryPrecisionFloat:;
 	add: #ArithmeticValue -> #subtractFromArbitraryPrecisionFloat:;
+	add: #Float -> #addToArbitraryPrecisionFloat:;
 	add: #Float -> #asArbitraryPrecisionFloatNumBits:;
+	add: #Float -> #divideIntoArbitraryPrecisionFloat:;
+	add: #Float -> #greaterThanArbitraryPrecisionFloat:;
+	add: #Float -> #multiplyByArbitraryPrecisionFloat:;
+	add: #Float -> #subtractFromArbitraryPrecisionFloat:;
 	add: #Fraction -> #asArbitraryPrecisionFloatNumBits:;
 	add: #Fraction -> #compareWithArbitraryPrecisionFloat:;
 	add: #Fraction -> #greaterThanArbitraryPrecisionFloat:;
@@ -141,6 +146,14 @@ subtractFromArbitraryPrecisionFloat: anArbitraryPrecisionFloat
 
 !Float methodsFor!
 
+addToArbitraryPrecisionFloat: anArbitraryPrecisionFloat
+	"Private - Answer the result of adding the receiver to the known ArbitraryPrecisionFloat,
+	anArbitraryPrecisionFloat, by coercing the less general of it and the receiver.
+	Overridden by subclasses which can implement more efficiently."
+
+	self isFinite ifTrue: [^anArbitraryPrecisionFloat retry: #+ coercing: self].
+	^self!
+
 asArbitraryPrecisionFloatNumBits: n 
 	| mantissa exponent |
 	self isZero ifTrue: [^0 asArbitraryPrecisionFloatNumBits: n ].
@@ -153,8 +166,46 @@ asArbitraryPrecisionFloatNumBits: n
 		nBits: n
 
 
-! !
+!
+
+divideIntoArbitraryPrecisionFloat: anArbitraryPrecisionFloat
+	"Private - Answer the result of dividing the known ArbitraryPrecisionFloat,
+	anArbitraryPrecisionFloat, by the receiver by coercing the less general of it and the receiver."
+
+	self isFinite ifTrue: [^anArbitraryPrecisionFloat retry: #/ coercing: self].
+	self isNaN ifTrue: [^self].
+	^anArbitraryPrecisionFloat zero!
+
+greaterThanArbitraryPrecisionFloat: anArbitraryPrecisionFloat
+	"Private - Answer whether the receiver is greater than the known ArbitraryPrecisionFloat,
+	anArbitraryPrecisionFloat, by coercing the less general of it and the receiver.
+	Overridden by subclasses which can implement more efficiently."
+
+	self isFinite ifTrue: [^anArbitraryPrecisionFloat retry: #< coercing: self].
+	self isNaN ifTrue: [^false].
+	^self positive!
+
+multiplyByArbitraryPrecisionFloat: anArbitraryPrecisionFloat
+	"Private - Answer the result of multiplying the receiver by the known ArbitraryPrecisionFloat,
+	anArbitraryPrecisionFloat, by coercing the less general of it and the receiver."
+
+	self isFinite ifTrue: [^anArbitraryPrecisionFloat retry: #* coercing: self].
+	self isNaN ifTrue: [^self].
+	^self * anArbitraryPrecisionFloat sign!
+
+subtractFromArbitraryPrecisionFloat: anArbitraryPrecisionFloat
+	"Private - Answer the result of subtracting the receiver to the known ArbitraryPrecisionFloat,
+	anArbitraryPrecisionFloat, by coercing the less general of it and the receiver."
+
+	self isFinite ifTrue: [^anArbitraryPrecisionFloat retry: #- coercing: self].
+	self isNaN ifTrue: [^self].
+	^self negated! !
+!Float categoriesFor: #addToArbitraryPrecisionFloat:!double dispatch!private! !
 !Float categoriesFor: #asArbitraryPrecisionFloatNumBits:!converting!public! !
+!Float categoriesFor: #divideIntoArbitraryPrecisionFloat:!double dispatch!private! !
+!Float categoriesFor: #greaterThanArbitraryPrecisionFloat:!double dispatch!private! !
+!Float categoriesFor: #multiplyByArbitraryPrecisionFloat:!double dispatch!private! !
+!Float categoriesFor: #subtractFromArbitraryPrecisionFloat:!double dispatch!private! !
 
 !Fraction methodsFor!
 
@@ -411,6 +462,15 @@ absPrintExactlyOn: aStream base: base
 	fixedFormat ifFalse:
 		[aStream nextPut: $e.
 		aStream nextPutAll: (baseExpEstimate - 1) printString]!
+
+addToFloat: aFloat
+	"Private - Answer the result of adding the receiver to the known Float, aFloat, by coercing 
+	the less general of it and the receiver. Overridden by subclasses which can implement 
+	more efficiently."
+
+	aFloat isFinite ifTrue: [^aFloat retry: #+ coercing: self].
+	"infinities will be infinities, and NaNs will be NaNs"
+	^aFloat!
 
 agm: aNumber 
 	"Answer the arithmetic geometric mean of self and aNumber"
@@ -764,6 +824,15 @@ digitCompare: b
 		ifTrue: [(self abs - b abs) sign]
 		ifFalse: [compare]!
 
+divideIntoFloat: aFloat
+	"Private - Answer the result of dividing the receiver into the known Float, aFloat, by 
+	coercing the less general of it and the receiver. Overridden by subclasses which 
+	can implement more efficiently."
+
+	aFloat isFinite ifTrue: [^aFloat retry: #/ coercing: self].
+	aFloat isNaN ifTrue: [^aFloat].
+	^aFloat / self sign!
+
 erf
 	"Answer the error function of the receiver, that is
 	2/pi sqrt*([:t | t squared negated exp] integrateFrom: 0 to: self)."
@@ -832,6 +901,15 @@ generality
 		ifTrue: [Float zero generality + 1]
 		ifFalse: [Float zero generality - 1]
 !
+
+greaterThanFloat: aFloat
+	"Private - Answer whether the receiver is greater than the known Float, aFloat, by coercing 
+	the less general of it and the receiver. Overridden by subclasses which can implement 
+	more efficiently."
+
+	aFloat isFinite ifTrue: [^aFloat retry: #< coercing: self].
+	aFloat isNaN ifTrue: [^false].
+	^aFloat negative!
 
 greaterThanFraction: aFraction
 	^self asTrueFraction > aFraction!
@@ -1101,6 +1179,15 @@ moduloNegPiToPi
 		x inPlaceSubtract: twoPi * quo.
 		self negative ifTrue: [x inPlaceNegated]].
 	^x asArbitraryPrecisionFloatNumBits: nBits * 2!
+
+multiplyByFloat: aFloat
+	"Private - Answer the result of multiplying the known Float, aFloat,
+	by the receiver, by coercing the less general of it and the recever.
+	Overridden by subclasses which can implement more efficiently."
+
+	aFloat isFinite ifTrue: [^aFloat retry: #* coercing: self].
+	aFloat isNaN ifTrue: [^aFloat].
+	^aFloat * self sign!
 
 naiveRaisedToInteger: n
 	"Very naive algorithm: use full precision.
@@ -1734,6 +1821,15 @@ storeOn: aStream
 	aStream space; nextPutAll: 'nBits:'; space; print: nBits.
 	aStream nextPut: $)!
 
+subtractFromFloat: aFloat
+	"Private - Answer the result of subtracting the receiver from the known Float,
+	aFloat, by coercing the less general of it and the receiver. Overridden by 
+	subclasses which can implement more efficiently."
+
+	aFloat isFinite ifTrue: [^aFloat retry: #- coercing: self].
+	^aFloat
+!
+
 tan
 	"Answer the tangent of the receiver."
 
@@ -1794,6 +1890,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #<!comparing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #=!comparing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #absPrintExactlyOn:base:!printing!public! !
+!ArbitraryPrecisionFloat categoriesFor: #addToFloat:!double dispatch!private! !
 !ArbitraryPrecisionFloat categoriesFor: #agm:!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #arcCos!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #arCosh!mathematical!public! !
@@ -1814,12 +1911,14 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #cos!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #cosh!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #digitCompare:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #divideIntoFloat:!double dispatch!private! !
 !ArbitraryPrecisionFloat categoriesFor: #erf!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #exp!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #exponent!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #generality!coercing!private! !
-!ArbitraryPrecisionFloat categoriesFor: #greaterThanFraction:!private! !
-!ArbitraryPrecisionFloat categoriesFor: #greaterThanInteger:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #greaterThanFloat:!double dispatch!private! !
+!ArbitraryPrecisionFloat categoriesFor: #greaterThanFraction:!double dispatch!private! !
+!ArbitraryPrecisionFloat categoriesFor: #greaterThanInteger:!double dispatch!private! !
 !ArbitraryPrecisionFloat categoriesFor: #hash!comparing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceAbs!private! !
 !ArbitraryPrecisionFloat categoriesFor: #inPlaceAdd:!private! !
@@ -1840,6 +1939,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #mantissa!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #mantissa:exponent:nBits:!initialize/release!public! !
 !ArbitraryPrecisionFloat categoriesFor: #moduloNegPiToPi!public! !
+!ArbitraryPrecisionFloat categoriesFor: #multiplyByFloat:!double dispatch!private! !
 !ArbitraryPrecisionFloat categoriesFor: #naiveRaisedToInteger:!public! !
 !ArbitraryPrecisionFloat categoriesFor: #negated!arithmetic!public! !
 !ArbitraryPrecisionFloat categoriesFor: #negative!public!testing! !
@@ -1883,6 +1983,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #sqrt!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #squared!public! !
 !ArbitraryPrecisionFloat categoriesFor: #storeOn:!printing!public! !
+!ArbitraryPrecisionFloat categoriesFor: #subtractFromFloat:!double dispatch!private! !
 !ArbitraryPrecisionFloat categoriesFor: #tan!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #tanh!mathematical!public! !
 !ArbitraryPrecisionFloat categoriesFor: #timesTwoPower:!arithmetic!public! !
