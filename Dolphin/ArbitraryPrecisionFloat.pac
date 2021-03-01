@@ -138,7 +138,7 @@ subtractFromArbitraryPrecisionFloat: anArbitraryPrecisionFloat
 
 	^anArbitraryPrecisionFloat retry: #- coercing: self! !
 !ArithmeticValue categoriesFor: #addToArbitraryPrecisionFloat:!double dispatch!private! !
-!ArithmeticValue categoriesFor: #compareWithArbitraryPrecisionFloat:!double dispatch!public! !
+!ArithmeticValue categoriesFor: #compareWithArbitraryPrecisionFloat:!double dispatch!private! !
 !ArithmeticValue categoriesFor: #divideIntoArbitraryPrecisionFloat:!double dispatch!private! !
 !ArithmeticValue categoriesFor: #greaterThanArbitraryPrecisionFloat:!double dispatch!private! !
 !ArithmeticValue categoriesFor: #multiplyByArbitraryPrecisionFloat:!double dispatch!private! !
@@ -268,7 +268,7 @@ greaterThanArbitraryPrecisionFloat: aFloat
 
 	^aFloat asTrueFraction < self! !
 !Fraction categoriesFor: #asArbitraryPrecisionFloatNumBits:!converting!public! !
-!Fraction categoriesFor: #compareWithArbitraryPrecisionFloat:!double dispatch!public! !
+!Fraction categoriesFor: #compareWithArbitraryPrecisionFloat:!double dispatch!private! !
 !Fraction categoriesFor: #greaterThanArbitraryPrecisionFloat:!double dispatch!private! !
 
 !Integer methodsFor!
@@ -287,7 +287,7 @@ greaterThanArbitraryPrecisionFloat: aFloat
 
 	^aFloat asTrueFraction < self! !
 !Integer categoriesFor: #asArbitraryPrecisionFloatNumBits:!converting!public! !
-!Integer categoriesFor: #compareWithArbitraryPrecisionFloat:!double dispatch!public! !
+!Integer categoriesFor: #compareWithArbitraryPrecisionFloat:!double dispatch!private! !
 !Integer categoriesFor: #greaterThanArbitraryPrecisionFloat:!double dispatch!private! !
 
 !Number methodsFor!
@@ -374,12 +374,16 @@ Instance Variables:
 	^ aNumber greaterThanArbitraryPrecisionFloat: self!
 
 = aNumber
+	| i k |
 	aNumber understandsArithmetic ifFalse: [^ false].
-	aNumber class = self class ifTrue:
-		[aNumber negative == self negative
-			ifTrue: [^ (self digitCompare: aNumber) = 0]
-			ifFalse: [^ false]].
-	^ aNumber compareWithArbitraryPrecisionFloat:self!
+	aNumber class = self class ifFalse: [^ aNumber compareWithArbitraryPrecisionFloat: self].
+	aNumber negative = self negative ifFalse: [^false].
+	aNumber isZero = self isZero ifFalse: [^false].
+	aNumber exponent = self exponent ifFalse: [^false].
+	i := self significandAsInteger.
+	k := aNumber significandAsInteger.
+	self precision = aNumber precision ifTrue: [^i = k].
+	^(i bitShift: 1 - i lowBit) = (k bitShift: 1 - k lowBit)!
 
 absPrintExactlyOn: aStream base: base
 	"Print my value on a stream in the given base. 
@@ -1716,6 +1720,9 @@ powerExpansionUnscaledErfPrecision: precBits
 	term exponent + precBits < (self exponent min: 0)] whileFalse.
 	^(erf inPlaceMultiplyBy: self) asArbitraryPrecisionFloatNumBits: precBits!
 
+precision
+	^nBits!
+
 printOn: aStream
 	^self printOn: aStream base: 10!
 
@@ -2084,6 +2091,7 @@ zero
 !ArbitraryPrecisionFloat categoriesFor: #powerExpansionTanhPrecision:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #powerExpansionTanPrecision:!private! !
 !ArbitraryPrecisionFloat categoriesFor: #powerExpansionUnscaledErfPrecision:!private! !
+!ArbitraryPrecisionFloat categoriesFor: #precision!accessing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #printOn:!printing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #printOn:base:!printing!public! !
 !ArbitraryPrecisionFloat categoriesFor: #printOn:maxDecimalPlaces:!printing!public! !
